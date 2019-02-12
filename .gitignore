@@ -34,6 +34,5 @@ vignettes/*.pdf
 
 # Shiny token, see https://shiny.rstudio.com/articles/shinyapps.html
 rsconnect/
-
-
+app2018/data/conventionals08152018EVJ.csv
 data/
