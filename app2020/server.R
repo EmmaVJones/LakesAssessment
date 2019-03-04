@@ -9,8 +9,10 @@ shinyServer(function(input, output, session) {
   the_data <- reactive({lakeStations})
   region_filter <- shiny::callModule(dynamicSelect, 'regionSelection', the_data, "OFFICE_NM")
   lake_filter <- shiny::callModule(dynamicSelect, "lakeSelection", region_filter, "SIGLAKENAME" )
-  #au_filter <- shiny::callModule(dynamicSelect, "AUselection", lake_filter, "ID305B" )
-  output$verbatim <- renderPrint({region_filter()$SIGLAKENAME})
+  au_filter <- shiny::callModule(dynamicSelect, "AUselection", lake_filter, "ID305B" )
+  output$verbatim <- renderPrint({au_filter()})
   
+  # Station Map
+  callModule(stationMap, "lakeMap",au_filter)
   
 })

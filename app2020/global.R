@@ -23,11 +23,11 @@ source('newBacteriaStandard_workingUpdatedRecSeason.R') # version with 2/3 sampl
 
 
 
-#modulesToReadIn <- c('temperature','pH','DO','SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
-#                     'Ammonia', 'Chloride', 'Nitrate','metals', 'fecalColiform','SSC','Benthics')
-#for (i in 1:length(modulesToReadIn)){
-#  source(paste('appModules/',modulesToReadIn[i],'Module.R',sep=''))
-#}
+modulesToReadIn <- c('stationMap')#,'temperature','pH','DO','SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
+                    # 'Ammonia', 'Chloride', 'Nitrate','metals', 'fecalColiform','SSC','Benthics')
+for (i in 1:length(modulesToReadIn)){
+  source(paste('appModules/',modulesToReadIn[i],'Module.R',sep=''))
+}
 
 
 # Loading screen

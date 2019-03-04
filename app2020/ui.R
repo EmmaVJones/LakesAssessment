@@ -68,7 +68,7 @@ shinyUI(fluidPage(theme="yeti.css",
                                ),
                                mainPanel(
                                  verbatimTextOutput('verbatim'),
-                                 #stationMapUI("lakeMap"),
+                                 stationMapUI("lakeMap"),
                                  DT::dataTableOutput("lakeDetails",width=650) )
                       )
                       )))

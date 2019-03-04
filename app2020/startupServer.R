@@ -16,3 +16,7 @@ conventionals$FDT_DATE_TIME2 <- as.POSIXct(conventionals$FDT_DATE_TIME, format="
 lakeAU <- st_read('GIS/draft2018IR_AUs/va_2018_aus_reservoir.shp')
 
 lakeStations <- read_csv('processedStationData/draft2020data/lakeStations2020draft.csv')
+lakeStations_sf <- lakeStations %>%
+  st_as_sf(coords = c("Longitude", "Latitude"),  # make spatial layer using these columns
+           remove = F, # don't remove these lat/lon cols from df
+           crs = 4326) # add coordinate reference system, needs to be geographic for now bc entering lat/lng, 
