@@ -106,7 +106,7 @@ shinyServer(function(input, output, session) {
   
   output$stationInfo <- DT::renderDataTable({ 
     req(stationData())
-    z <- dplyr::select(stationData()[1,], FDT_STA_ID:STA_REC_CODE, Latitude:Assess_TYPE) %>% 
+    z <- dplyr::select(stationData()[1,], FDT_STA_ID:STA_REC_CODE, Latitude:`Max Temperature (C)`) %>% 
       t() %>% as.data.frame() %>% rename(`Station and WQS Information` = 1)
     DT::datatable(z, options= list(pageLength = nrow(z), scrollY = "250px", dom='t'))  })
   
@@ -135,6 +135,62 @@ shinyServer(function(input, output, session) {
     DT::datatable(z, options= list(pageLength = nrow(z), scrollY = "250px", dom='t'))  })
   
   ## Station Table View Section
+  
+  
+  ## End station table section
+  
+  #### Data Sub Tab ####---------------------------------------------------------------------------------------------------
+  
+  # Display Data 
+  output$AURawData <- DT::renderDataTable({ 
+    AUData()
+    DT::datatable(AUData(), extensions = 'Buttons', escape=F, rownames = F, 
+                  options= list(scrollX = TRUE, pageLength = nrow(AUData()), scrollY = "300px", 
+                                dom='Btf', buttons=list('copy',
+                                                        list(extend='csv',filename=paste('AUData_',paste(input$stationSelection, collapse = "_"),Sys.Date(),sep='')),
+                                                        list(extend='excel',filename=paste('AUData_',paste(input$stationSelection, collapse = "_"),Sys.Date(),sep='')))))})
+  # Summarize data
+  output$stationDataTableRecords <- renderText({
+    req(AUData())
+    paste(nrow(AUData()), 'records were retrieved for',as.character(input$AUSelection),sep=' ')})
+  output$uniqueStationDataTableRecords <- renderTable({
+    req(AUData())
+    plyr::count(AUData(), vars = c("FDT_STA_ID"))%>%dplyr::rename('Number of Records'='freq')})
+  output$stationDataTableAssessmentWindow <- renderText({
+    req(AUData())
+    withinAssessmentPeriod(AUData())})
+  
+  
+  
+  
+  # Create Data frame with all data within ID305B and stratification information
+  # Pool thermocline data to get 1 sample per day, not 2 with top/bottom time difference
+  stationDataDailySample <- reactive({
+    req(AUData())
+    dat <- AUData()
+    dat$FDT_DATE_TIME <- as.POSIXct(dat$FDT_DATE_TIME, format="%m/%d/%Y %H:%M")
+    
+    dat <- mutate(dat, SampleDate=format(FDT_DATE_TIME,"%m/%d/%y"))%>% # Separate sampling events by day
+      filter(!is.na(FDT_TEMP_CELCIUS))# remove any NA values to keep thermocline function happy
+    thermo <- stratifiedLake(dat)
+    thermo$ThermoclineDepth <- as.numeric(thermo$ThermoclineDepth)
+    dat2 <- plyr::join(dat,thermo,by=c('FDT_STA_ID','SampleDate'))%>%
+      mutate(LakeStratification= ifelse(FDT_DEPTH < ThermoclineDepth,"Epilimnion","Hypolimnion"))
+    return(dat2)
+  })
+  
+  
+  
+  # Need this as a reactive to regenerate below modules when user changes station 
+  stationSelected <- reactive({input$stationSelection})
+  
+  
+  
+  ## Temperature Sub Tab ##------------------------------------------------------------------------------------------------------
+  
+  callModule(temperaturePlotlySingleStation,'temperature', stationDataDailySample, stationSelected)
+
+  
 })
   
   

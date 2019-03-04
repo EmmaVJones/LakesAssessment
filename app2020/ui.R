@@ -75,8 +75,9 @@ shinyUI(fluidPage(theme="yeti.css",
                       ),
                       tabPanel('Assessment Unit Review',
                                fluidRow(column(9, DT::dataTableOutput('selectedLake')),
-                                        column(3,br(),actionButton('pullLakeData','Select Watershed for analysis'),
-                                               helpText('If the button above is disabled, there are no AUs in the selected lakes.'))),
+                                        column(3,br(),actionButton('pullLakeData','Select lake for analysis')#,
+                                               #helpText('If the button above is disabled, there are no AUs in the selected lakes.')
+                                               )),
                                hr(),
                                uiOutput('AUSelection_'),
                                h5(strong('AU information from last cycle')),
@@ -88,7 +89,39 @@ shinyUI(fluidPage(theme="yeti.css",
                                                         station (listed in a station's ID305B_1/ID305B_2/ID305B_3 fields) for context. ")),
                                         column(4, DT::dataTableOutput('stationHistoricalInfo'))),
                                hr(),
-                               h3('Station Results for Review')#,
+                               h3('Station Results for Review'),
+                               helpText('This table outputs the site specific results for direct export to the Station Table. It also serves to highlight
+                                                  where exceedances are present and should be reviewed in the individual parameter visualization tabs below.'),
+                               h4('Official Station Results Table'),
+                               helpText('Note that WAT_TOX_VIO AND WAT_TOX_STAT are only reflecting ammonia analysis. Additionally, parameters are highlighted
+                                        in different colors to indicate further review may be necessary. Parameters highlighted in yellow have at least one 
+                                        violation of a standard. Parameters highlighted in red exceed the 10.5% exceedance rate. Both scenarios warrant further
+                                        investigation and may requre comments in the Station Table and ADB.'),
+                               DT::dataTableOutput('stationTableDataSummary'), br(), 
+                               h4('PWS violations'),
+                               helpText("Any PWS violations should noted in a station's COMMENT field of the Stations Table. The table below organizes 
+                                        PWS information to expedite the comment process."),
+                               DT::dataTableOutput('PWStable'),
+                               br(),hr(),br(),
+                               h3('Assessment Unit Raw Data Review and Visualization'),
+                               tabsetPanel(
+                                 tabPanel('Conventionals Data',
+                                          tabsetPanel(
+                                            tabPanel('Raw Data',br(),
+                                                     DT::dataTableOutput('AURawData'),
+                                                     h4('Data Summary'),
+                                                     h5('Records Retrieved in Assessment Unit:'),
+                                                     fluidRow(column(1),column(10,textOutput('stationDataTableRecords'))),
+                                                     h5('Field and Lab Data in Assessment Window:'),
+                                                     fluidRow(column(1),column(10,tableOutput('uniqueStationDataTableRecords'))),
+                                                     h5('Assessment Window:'),
+                                                     fluidRow(column(1),column(10,textOutput('stationDataTableAssessmentWindow'))), br(),br()),
+                                            tabPanel('Temperature',
+                                                     helpText('Review each site using the single site visualization section. The results from this analysis are reflected
+                                                                        in the TEMP_VIO, TEMP_SAMP, and TEMP_STAT columns in the station table.'),
+                                                     temperaturePlotlySingleStationUI('temperature'))#,
+                                            
+                                          )))
                                
                       )
                       )))

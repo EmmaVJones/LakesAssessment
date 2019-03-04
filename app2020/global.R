@@ -18,17 +18,17 @@ assessmentCycle <- '2020'
 
 
 # Bring in modules
-#source('appModules/multipleDependentSelectizeArguments.R')
-#source('newBacteriaStandard_workingUpdatedRecSeason.R') # version with 2/3 samples in April-Oct
+source('appModules/multipleDependentSelectizeArguments.R')
+source('newBacteriaStandard_workingUpdatedRecSeason.R') # version with 2/3 samples in April-Oct
 
 
 
 
-#modulesToReadIn <- c('stationMap')#,'temperature','pH','DO','SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
+modulesToReadIn <- c('temperature')#,'pH','DO','SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
                     # 'Ammonia', 'Chloride', 'Nitrate','metals', 'fecalColiform','SSC','Benthics')
-#for (i in 1:length(modulesToReadIn)){
-#  source(paste('appModules/',modulesToReadIn[i],'Module.R',sep=''))
-#}
+for (i in 1:length(modulesToReadIn)){
+  source(paste('appModules/',modulesToReadIn[i],'Module.R',sep=''))
+}
 
 
 # Loading screen
@@ -142,4 +142,58 @@ lastXyears <- function(dataFrame, dateTimeColumn, nYears, consecutive){ # not bo
 
 #lastXyears(dataFrame, dateTimeColumn, 7, TRUE)
 
+
+
+
+
+# Table of thermocline depth (if thermocline exists) for each sample date
+stratifiedLake <- function(x){
+  template <- data.frame(FDT_STA_ID=NA,SampleDate=NA,ThermoclineDepth=NA)
+  holder <- template
+  if(nrow(x)>0){
+    for(k in 1:length(unique(x$FDT_STA_ID))){
+      oneStation <- filter(x,FDT_STA_ID %in% unique(x$FDT_STA_ID)[k])
+      for(i in 1:length(unique(oneStation$SampleDate))){
+        oneProfile <- filter(oneStation,SampleDate %in% unique(oneStation$SampleDate)[i])%>%
+          dplyr::select(SampleDate,FDT_DEPTH,FDT_TEMP_CELCIUS) %>%
+          mutate(DepthDiff=c(NA,diff(FDT_DEPTH)),
+                 TempDiff=c(NA,diff(FDT_TEMP_CELCIUS))) %>%
+          filter(DepthDiff==1) %>% # get rid of changes less than 1 meter depth
+          filter(TempDiff<=-1) # find where temperature changes are 1C or greater
+        therm <- if(nrow(oneProfile)>0){min(oneProfile$FDT_DEPTH)-0.5}else{NaN} # subtract 0.5 to get the top of the thermocline
+        holder[i,] <- cbind(oneStation$FDT_STA_ID[1],unique(oneStation$SampleDate)[i],format(therm))
+      }
+      template <- rbind(template,holder)
+      template <- template[complete.cases(template),]
+    }
+    row.names(template) <- 1:nrow(template)
+    return(template)
+  }else{
+    return(template)
+  }
+}
+
+
+
+#### Temperature Assessment Functions ---------------------------------------------------------------------------------------------------
+
+#Max Temperature Exceedance Function
+temp_Assessment <- function(x){
+  temp <- dplyr::select(x,FDT_DATE_TIME,FDT_TEMP_CELCIUS, `Max Temperature (C)`)%>% # Just get relevant columns, 
+    filter(!is.na(FDT_TEMP_CELCIUS))%>% #get rid of NA's
+    mutate(TemperatureExceedance=ifelse(FDT_TEMP_CELCIUS > `Max Temperature (C)`,T,F))%>% # Identify where above max Temperature, 
+    filter(TemperatureExceedance==TRUE) # Only return temp measures above threshold
+  temp$FDT_DATE_TIME <- as.character(temp$FDT_DATE_TIME)
+  return(temp)
+}
+
+# Exceedance Rate Temperature
+exceedance_temp <- function(x){
+  temp <- dplyr::select(x,FDT_DATE_TIME,FDT_TEMP_CELCIUS,`Max Temperature (C)`)%>% # Just get relevant columns, 
+    filter(!is.na(FDT_TEMP_CELCIUS)) #get rid of NA's
+  temp_Assess <- temp_Assessment(x)
+  
+  temp_results <- assessmentDetermination(temp,temp_Assess,"temperature","Aquatic Life")
+  return(temp_results)
+}
 
