@@ -1,4 +1,4 @@
-#userDataset <- filter(lakeStations, FDT_STA_ID == '2-JKS046.40')
+userDataset <- filter(lakeStations, SIGLAKENAME == 'Claytor Lake')
 
 
 stationMapUI <- function(id){
@@ -16,6 +16,10 @@ stationMap <- function(input, output, session, userDataset){
       st_as_sf(coords = c("Longitude", "Latitude"),  # make spatial layer using these columns
                remove = F, # don't remove these lat/lon cols from df
                crs = 4326))) # add coordinate reference system, needs to be geographic for now bc entering lat/lng, 
+    AUs <- filter(lakeAU, ID305B %in% as.character( points_sf $ID305B_1) |
+                    ID305B %in% as.character( points_sf $ID305B_2) |
+                    ID305B %in% as.character( points_sf $ID305B_3))
+    
     
     suppressWarnings(suppressMessages(leaflet(userDataset_sf) %>% setView(lng=unique(userDataset_sf$Longitude)[1],lat=unique(userDataset_sf$Latitude)[1],zoom=12) %>%
       addProviderTiles(providers$OpenStreetMap,group='Open Street Map')%>%
@@ -25,6 +29,7 @@ stationMap <- function(input, output, session, userDataset){
                        group="Lake Monitoring Stations", layerId=~FDT_STA_ID,
                        popup=popupTable(userDataset_sf,
                                         zcol=c("FDT_STA_ID","STA_DESC","ID305B_1", "ID305B_2", "ID305B_3")))%>%
+      addPolygons(data = AUs, )
       addCircleMarkers(data=lakeStations_sf,radius=3,color='orange',fillColor="orange",fillOpacity = 1,stroke=0,
                        group="All Lake Monitoring Stations",layerId=~lakeStations_sf$Longitude,
                        popup=popupTable(lakeStations_sf,zcol=c("FDT_STA_ID","STA_DESC","Deq_Region","ID305B_1","ID305B_2","ID305B_3"))) %>% hideGroup('All Lake Monitoring Stations')%>%

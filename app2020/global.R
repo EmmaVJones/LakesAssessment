@@ -8,6 +8,7 @@ library(plotly)
 library(raster)
 library(DT)
 library(FSA)
+library(RColorBrewer)
 
 #####################################   UPDATE EACH NEW TOOL REBUILD #############################################
 # Establish Assessment Period 
@@ -17,17 +18,17 @@ assessmentCycle <- '2020'
 
 
 # Bring in modules
-source('appModules/multipleDependentSelectizeArguments.R')
-source('newBacteriaStandard_workingUpdatedRecSeason.R') # version with 2/3 samples in April-Oct
+#source('appModules/multipleDependentSelectizeArguments.R')
+#source('newBacteriaStandard_workingUpdatedRecSeason.R') # version with 2/3 samples in April-Oct
 
 
 
 
-modulesToReadIn <- c('stationMap')#,'temperature','pH','DO','SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
+#modulesToReadIn <- c('stationMap')#,'temperature','pH','DO','SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
                     # 'Ammonia', 'Chloride', 'Nitrate','metals', 'fecalColiform','SSC','Benthics')
-for (i in 1:length(modulesToReadIn)){
-  source(paste('appModules/',modulesToReadIn[i],'Module.R',sep=''))
-}
+#for (i in 1:length(modulesToReadIn)){
+#  source(paste('appModules/',modulesToReadIn[i],'Module.R',sep=''))
+#}
 
 
 # Loading screen

@@ -63,13 +63,33 @@ shinyUI(fluidPage(theme="yeti.css",
                                     The map will update based on your selection. Once you have reviewed the data below the map, proceed 
                                     to the 'Lake Assessment' Tab to begin analyzing the AU."),
                                  dynamicSelectInput('regionSelection', "Select DEQ Region to Assess", multiple = FALSE),
-                                 dynamicSelectInput("lakeSelection", "Select Lake to Assess", multiple = FALSE),
-                                 dynamicSelectInput("AUselection", "Select Assessment Unit to Assess", multiple = FALSE)
+                                 dynamicSelectInput("lakeSelection", "Select Lake to Assess", multiple = FALSE)#,
+                                 #dynamicSelectInput("AUselection", "Select Assessment Unit to Assess", multiple = FALSE)
                                ),
                                mainPanel(
-                                 verbatimTextOutput('verbatim'),
-                                 stationMapUI("lakeMap"),
-                                 DT::dataTableOutput("lakeDetails",width=650) )
+                                 leafletOutput("lakeMap"),br(),
+                                 h5(strong('Assessment units in selected lake')),
+                                 DT::dataTableOutput('AUSummary'), br(),
+                                 h5(strong('Stations in selected lake that were sampled in current window')),
+                                 DT::dataTableOutput('stationSummary'))
+                      ),
+                      tabPanel('Assessment Unit Review',
+                               fluidRow(column(9, DT::dataTableOutput('selectedLake')),
+                                        column(3,br(),actionButton('pullLakeData','Select Watershed for analysis'),
+                                               helpText('If the button above is disabled, there are no AUs in the selected lakes.'))),
+                               hr(),
+                               uiOutput('AUSelection_'),
+                               h5(strong('AU information from last cycle')),
+                               DT::dataTableOutput('selectedAU'),br(),
+                               uiOutput('stationSelection_'),
+                               fluidRow(column(4, DT::dataTableOutput('stationInfo')),
+                                        column(4, leafletOutput('stationMap', height = 300, width = 300),
+                                               helpText("The AUs displayed on the map above represent all AUs associated with the selected
+                                                        station (listed in a station's ID305B_1/ID305B_2/ID305B_3 fields) for context. ")),
+                                        column(4, DT::dataTableOutput('stationHistoricalInfo'))),
+                               hr(),
+                               h3('Station Results for Review')#,
+                               
                       )
                       )))
                   )
