@@ -23,6 +23,8 @@ lakeAU <- st_read('GIS/draft2018IR_AUs/va_2018_aus_reservoir.shp')%>%
 
 lakeAU_region <- st_join(lakeAU, dplyr::select(assessmentLayer, ASSESS_REG), join = st_intersects) 
 
+unique(lakeAU_region$ID305B)
+
 lakeStations2020_1 <- left_join(lakeStations2020, dplyr::select(lakeAU_region,ID305B, ASSESS_REG), by='ID305B')
 
 # Now attach Significant Lake status from latest ADB (2016 at present)
