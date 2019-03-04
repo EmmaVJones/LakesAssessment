@@ -197,3 +197,33 @@ exceedance_temp <- function(x){
   return(temp_results)
 }
 
+#Min DO Exceedance Function
+DO_Assessment <- function(x,qualifier){ # qualifier allows you to run the analysis including many or few stratification qualifications
+  DO <- dplyr::select(x,FDT_STA_ID,FDT_DATE_TIME,FDT_DEPTH,DO,LakeStratification,FDT_DATE_TIME2,`Dissolved Oxygen Min (mg/L)`)%>% # Just get relevant columns, 
+    filter(!is.na(DO))%>% #get rid of NA's
+    filter(LakeStratification %in% qualifier)%>%
+    ##filter(LakeStratification=="Epilimnion") # Only assess Epilimnion
+    ##filter(LakeStratification %in% c("Epilimnion",NA))%>% # Only assess Epilimnion or NaN (no stratification)
+    mutate(DOExceedance=ifelse(DO < `Dissolved Oxygen Min (mg/L)`,T,F))%>% # Identify where above max Temperature, 9VAC25-260-50 ClassIII= 32C
+    filter(DOExceedance==TRUE) # Only return temp measures above threshold
+  
+  DO$FDT_DATE_TIME <- as.character(DO$FDT_DATE_TIME2)
+  DO <- dplyr::select(DO,-c(DOExceedance,FDT_DATE_TIME2)) # Don't show user column, could be confusing to them
+  
+  return(DO)
+}
+
+# Exceedance Rate DO
+exceedance_DO <- function(x, qualifier){
+  DO <- dplyr::select(x,FDT_STA_ID,FDT_DATE_TIME,FDT_DEPTH,DO,LakeStratification,`Dissolved Oxygen Min (mg/L)`)%>% # Just get relevant columns, 
+    filter(!is.na(DO))%>% #get rid of NA's
+    filter(LakeStratification %in% qualifier)
+  ##filter(LakeStratification %in% c("Epilimnion",NA)) # Only assess Epilimnion or NaN (no stratification)
+  ##filter(LakeStratification=="Epilimnion") # Only assess Epilimnion
+  DO_Assess <- DO_Assessment(x,qualifier)
+  DO_results <- assessmentDetermination(DO,DO_Assess,"Dissolved Oxygen","Aquatic Life")
+  return(DO_results)
+}
+
+
+

@@ -191,6 +191,10 @@ shinyServer(function(input, output, session) {
   callModule(temperaturePlotlySingleStation,'temperature', stationDataDailySample, stationSelected)
 
   
+  ## DO Sub Tab ##------------------------------------------------------------------------------------------------------
+  #callModule(DOPlotlySingleStation,'DO', stationDataDailySample, stationSelected)
+  
+  
 })
   
   
