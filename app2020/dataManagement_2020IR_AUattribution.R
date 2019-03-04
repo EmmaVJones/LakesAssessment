@@ -17,15 +17,20 @@ lakeStationsFinal <- readRDS('data/lakeStationsFinal.RDS')
 # First need each AU associated with a sig lake name
 
 # Bring in draft 2018 reservoir spatial file to get DEQ region associated with ID305B
-assessmentLayer <- st_read('GIS/AssessmentRegions_VA84_basins.shp')
+assessmentLayer <- st_read('GIS/newDEQRegions_VA.shp')%>%# use just big region polygons to save memory
+  st_transform( st_crs(4326)) # transform to WQS84 for spatial intersection 
 lakeAU <- st_read('GIS/draft2018IR_AUs/va_2018_aus_reservoir.shp')%>%
   st_transform( st_crs(4326)) # transform to WQS84 for spatial intersection
 
-lakeAU_region <- st_join(lakeAU, dplyr::select(assessmentLayer, ASSESS_REG), join = st_intersects) 
+lakeAU_region <- st_join(lakeAU, assessmentLayer, join = st_intersects) 
+# fix the two lake AU's that fall between regional offices, Lake Anna and Moomaw
+lakeAU_region <- #mutate(lakeAU_region, OFFICE_NM = case_when(ID305B == 'VAN-F07L_NAR01A02' ~ 'NRO',
+                  #                                           ID305B == 'VAW-I03L_JKS03A02' ~ 'BRRO')) %>%
+  distinct(lakeAU_region, ID305B, .keep_all = TRUE) # remove duplicates
 
-unique(lakeAU_region$ID305B)
 
-lakeStations2020_1 <- left_join(lakeStations2020, dplyr::select(lakeAU_region,ID305B, ASSESS_REG), by='ID305B')
+
+lakeStations2020_1 <- left_join(lakeStations2020, dplyr::select(lakeAU_region,ID305B, OFFICE_NM), by='ID305B')
 
 # Now attach Significant Lake status from latest ADB (2016 at present)
 # table was exported from VA_ADB_2016_final.mdb, tblAllLakes_2016 table 
@@ -63,8 +68,8 @@ names(lakeStationsFinal)[!(names(lakeStationsFinal) %in% names(lakeStations_3))]
 
 # Fix some annoying duplicated field names
 lakeStations_4 <- dplyr::select(lakeStations_3, -c(REGION.y, WATER_NAME.y))%>%
-  rename('REGION'='REGION.x','WATER_NAME'='WATER_NAME.x')
+  rename('REGION'='REGION.x','WATER_NAME'='WATER_NAME.x') %>%
+  dplyr::select(-geometry)
 
 
-
-write.csv(lakeStations_4,'processedStationData/draft2020data/lakeStations2020draft.csv',row.names=F)
+write.csv(lakeStations_4,'processedStationData/draft2020data/lakeStations2020draft.csv', row.names=F)
