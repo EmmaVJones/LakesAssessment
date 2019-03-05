@@ -52,6 +52,6 @@ stationData <- stationDataDailySample
 x <- stationData
 
 
-StationTableResults <- cbind(StationTableStartingData(x), tempExceedances(x),DOExceedances_Min(x))
+StationTableResults <- cbind(StationTableStartingData(x), tempExceedances(x),DOExceedances_Min(x),pHExceedances(x))
  # tempExceedances(x), DOExceedances_Min(x), pHExceedances(x),
   

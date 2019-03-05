@@ -123,7 +123,11 @@ shinyUI(fluidPage(theme="yeti.css",
                                             tabPanel('Dissolved Oxygen',
                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
                                                                         in the DO_VIO, DO_SAMP, and DO_STAT columns in the station table.'),
-                                                     DOPlotlySingleStationUI('DO'))#,
+                                                     DOPlotlySingleStationUI('DO')),
+                                            tabPanel('pH',
+                                                     helpText('Review each site using the single site visualization section. The results from this analysis are reflected
+                                                                        in the PH_VIO, PH_SAMP, and PH_STAT columns in the station table.'),
+                                                     pHPlotlySingleStationUI('pH'))#,
                                             
                                           )))
                                

@@ -160,7 +160,7 @@ shinyServer(function(input, output, session) {
     
     x <- filter(stationDataDailySample(), FDT_STA_ID %in% input$stationSelection)
     
-    cbind(StationTableStartingData(x), tempExceedances(x),DOExceedances_Min(x)) %>% 
+    cbind(StationTableStartingData(x), tempExceedances(x),DOExceedances_Min(x), pHExceedances(x)) %>% 
       dplyr::select(-ends_with('exceedanceRate'))
   })
   
@@ -172,8 +172,8 @@ shinyServer(function(input, output, session) {
                                                        list(extend='csv',filename=paste('AssessmentResults_',paste(assessmentCycle,input$stationSelection, collapse = "_"),Sys.Date(),sep='')),
                                                        list(extend='excel',filename=paste('AssessmentResults_',paste(assessmentCycle,input$stationSelection, collapse = "_"),Sys.Date(),sep=''))))) %>% 
       formatStyle(c('TEMP_SAMP','TEMP_VIO','TEMP_STAT'), 'TEMP_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
-      formatStyle(c('DO_SAMP','DO_VIO','DO_STAT'), 'DO_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) #%>%
-      #formatStyle(c('PH_SAMP','PH_VIO','PH_STAT'), 'PH_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+      formatStyle(c('DO_SAMP','DO_VIO','DO_STAT'), 'DO_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+      formatStyle(c('PH_SAMP','PH_VIO','PH_STAT'), 'PH_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) #%>%
       #formatStyle(c('ECOLI_SAMP','ECOLI_VIO','ECOLI_STAT'), 'ECOLI_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
       
   })
@@ -222,7 +222,8 @@ shinyServer(function(input, output, session) {
   ## DO Sub Tab ##------------------------------------------------------------------------------------------------------
   callModule(DOPlotlySingleStation,'DO', stationDataDailySample, stationSelected)
   
-  
+  ## pH Sub Tab ##------------------------------------------------------------------------------------------------------
+  callModule(pHPlotlySingleStation,'pH', stationDataDailySample, stationSelected)
 })
   
   

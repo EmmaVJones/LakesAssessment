@@ -24,7 +24,7 @@ source('newBacteriaStandard_workingUpdatedRecSeason.R') # version with 2/3 sampl
 
 
 
-modulesToReadIn <- c('temperature','DO')#,'pH',,'SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
+modulesToReadIn <- c('temperature','DO','pH')#,,'SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
                     # 'Ammonia', 'Chloride', 'Nitrate','metals', 'fecalColiform','SSC','Benthics')
 for (i in 1:length(modulesToReadIn)){
   source(paste('appModules/',modulesToReadIn[i],'Module.R',sep=''))
@@ -282,4 +282,46 @@ DOExceedances_Min <- function(x){
   quickStats(DO, 'DO')
 }
 #DOExceedances_Min(x)
+
+
+
+
+#### pH Assessment Functions ---------------------------------------------------------------------------------------------------
+
+pH_rangeAssessment <- function(x){
+  pH <- dplyr::select(x,FDT_STA_ID,FDT_DATE_TIME,FDT_DEPTH,FDT_FIELD_PH,`pH Min`,`pH Max`, LakeStratification)%>% # Just get relavent columns, 
+    filter(!is.na(FDT_FIELD_PH))%>% #get rid of NA's
+    filter(LakeStratification %in% c("Epilimnion",NA)) %>% # As of 2018 IR pH standards only apply to epilimnion or non stratified lake samples
+    mutate(pHrange=ifelse(FDT_FIELD_PH < `pH Min` | FDT_FIELD_PH > `pH Max`,TRUE, FALSE)) %>% # Identify where pH outside of assessment range
+    filter(pHrange==TRUE) %>% # Only return pH measures outside of assessement range
+    dplyr::select(-c(pHrange)) # Don't show user interval column, could be confusing to them, T/F in pHrange column sufficient
+  pH$FDT_DATE_TIME <- as.character(pH$FDT_DATE_TIME)
+  return(pH)
+}
+
+
+exceedance_pH <- function(x,pHrange){
+  pH <- dplyr::select(x,FDT_STA_ID,FDT_DATE_TIME,FDT_DEPTH,FDT_FIELD_PH, `pH Min`,`pH Max`, LakeStratification)%>% # Just get relavent columns, 
+    filter(!is.na(FDT_FIELD_PH)) #get rid of NA's
+  pH_rangeAssess <- pH_rangeAssessment(x)
+  
+  pH_results <- assessmentDetermination(pH %>% filter(!is.na(FDT_FIELD_PH))%>% #get rid of NA's
+                                          filter(LakeStratification %in% c("Epilimnion",NA)),
+                                        pH_rangeAssess,"pH","Aquatic Life")
+  return(pH_results)
+}
+
+
+# For station table, presented a little differently
+
+pHExceedances <- function(x){
+  pH <- dplyr::select(x,FDT_DATE_TIME,FDT_FIELD_PH,`pH Min`,`pH Max`, LakeStratification)%>% # Just get relevant columns, 
+    filter(!is.na(FDT_FIELD_PH))%>% #get rid of NA's
+    filter(LakeStratification %in% c("Epilimnion",NA)) %>%
+    rowwise() %>% mutate(interval=findInterval(FDT_FIELD_PH,c(`pH Min`,`pH Max`)))%>% # Identify where pH outside of assessment range
+    ungroup()%>%
+    mutate(exceeds=ifelse(interval == 1, F, T)) # Highlight where pH doesn't fall into assessment range
+  quickStats(pH, 'PH')
+}
+#pHExceedances(x)
 
