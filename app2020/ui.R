@@ -127,7 +127,16 @@ shinyUI(fluidPage(theme="yeti.css",
                                             tabPanel('pH',
                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
                                                                         in the PH_VIO, PH_SAMP, and PH_STAT columns in the station table.'),
-                                                     pHPlotlySingleStationUI('pH'))#,
+                                                     pHPlotlySingleStationUI('pH')),
+                                            tabPanel('Nutrients',
+                                                     helpText('Review each site using the single site visualization section. The results from this analysis are reflected
+                                                              in the NUT_TP_VIO, NUT_TP_SAMP, NUT_TP_STAT, NUT_CHLA_VIO, NUT_CHLA_SAMP, and NUT_CHLA_STAT columns 
+                                                              in the station table.'),
+                                                     tabsetPanel(
+                                                       tabPanel('Chlorophyll a',br(),
+                                                                chlAPlotlySingleStationUI('chlA')),
+                                                       tabPanel('Total Phosphorus',br())
+                                                     ))
                                             
                                           )))
                                

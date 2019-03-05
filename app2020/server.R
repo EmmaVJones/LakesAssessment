@@ -122,6 +122,23 @@ shinyServer(function(input, output, session) {
   })
   
   
+  # Filter all lake LZ data to make pooled assessment, for CHL A and TP
+  allLakeLZdata <- reactive({
+    req(stationDataDailySample())
+    sigLake <- as.character(AUData()$SIGLAKENAME)
+    allLakeLZstations <- as.character(filter(lakeStations,SIGLAKENAME %in% sigLake)$STATION_ID)
+    allLakeLZData <- filter(conventionals,FDT_STA_ID %in% allLakeLZstations)
+    allLakeLZData$FDT_DATE_TIME <- as.POSIXct(allLakeLZData$FDT_DATE_TIME, format="%m/%d/%Y %H:%M")
+    allLakeLZData<- mutate(allLakeLZData, SampleDate=format(FDT_DATE_TIME,"%m/%d/%y"))%>% # Separate sampling events by day
+      filter(!is.na(FDT_TEMP_CELCIUS))# remove any NA values to keep thermocline function happy
+    thermo <- stratifiedLake(allLakeLZData)
+    thermo$ThermoclineDepth <- as.numeric(thermo$ThermoclineDepth)
+    allLakeLZData2 <- plyr::join(allLakeLZData,thermo,by=c('FDT_STA_ID','SampleDate'))%>%
+      mutate(LakeStratification= ifelse(FDT_DEPTH < ThermoclineDepth,"Epilimnion","Hypolimnion"))%>%
+      plyr::join(dplyr::select(lakeStations, Chlorophyll_A_limit, TPhosphorus_limit, Assess_TYPE, FDT_STA_ID), by='FDT_STA_ID')
+    return(allLakeLZData2)
+  })
+  
   
   output$stationInfo <- DT::renderDataTable({ 
     req(stationData())
@@ -220,10 +237,19 @@ shinyServer(function(input, output, session) {
 
   
   ## DO Sub Tab ##------------------------------------------------------------------------------------------------------
+  
   callModule(DOPlotlySingleStation,'DO', stationDataDailySample, stationSelected)
   
   ## pH Sub Tab ##------------------------------------------------------------------------------------------------------
+  
   callModule(pHPlotlySingleStation,'pH', stationDataDailySample, stationSelected)
+  
+  ## Chlorophyll a Sub Tab ##------------------------------------------------------------------------------------------------------
+  
+  callModule(chlAPlotlySingleStation,'chlA', stationDataDailySample, stationSelected, allLakeLZdata)
+  
+  
+  
 })
   
   

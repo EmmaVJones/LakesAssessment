@@ -24,7 +24,7 @@ source('newBacteriaStandard_workingUpdatedRecSeason.R') # version with 2/3 sampl
 
 
 
-modulesToReadIn <- c('temperature','DO','pH')#,,'SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
+modulesToReadIn <- c('temperature','DO','pH','Chl_a_')#,,'SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
                     # 'Ammonia', 'Chloride', 'Nitrate','metals', 'fecalColiform','SSC','Benthics')
 for (i in 1:length(modulesToReadIn)){
   source(paste('appModules/',modulesToReadIn[i],'Module.R',sep=''))
@@ -324,4 +324,65 @@ pHExceedances <- function(x){
   quickStats(pH, 'PH')
 }
 #pHExceedances(x)
+
+
+
+
+#### Chlorophyll a Assessment Functions ---------------------------------------------------------------------------------------------------
+
+chlA_Assessment_OneStation <- function(x){
+  chlA <- filter(x, !is.na(CHLOROPHYLL))%>%
+    dplyr::select(FDT_STA_ID,FDT_DEPTH,FDT_DATE_TIME, SampleDate,CHLOROPHYLL,Chlorophyll_A_limit,Assess_TYPE)%>%
+    mutate(Year=format(FDT_DATE_TIME,"%Y"),Month=format(FDT_DATE_TIME,'%m'))%>%
+    filter(Month %in% c('04','05','06','07','08','09','10'))%>% # make sure only assess valid sample months
+    group_by(Year)%>%
+    mutate(samplePerYear= n(),pct90=quantile(CHLOROPHYLL,0.9),
+           chlA_Exceedance=ifelse(pct90>Chlorophyll_A_limit,T,F),
+           LacustrineZone=ifelse(!is.na(unique(x$Assess_TYPE)) & unique(x$Assess_TYPE)=="LZ",TRUE,FALSE))%>%
+    dplyr::select(FDT_STA_ID,Year,samplePerYear,pct90,Chlorophyll_A_limit,chlA_Exceedance,LacustrineZone)%>%
+    distinct(Year,.keep_all=T)
+  return(chlA)
+}
+
+chlA_Assessment <- function(x){
+  holder <- list()
+  for(i in 1:length(unique(x$FDT_STA_ID))){
+    dat <- filter(x,FDT_STA_ID %in% unique(x$FDT_STA_ID)[i])
+    holder[[i]] <-  as.data.frame(chlA_Assessment_OneStation(dat))
+  }
+  alldat <- do.call(rbind,holder)#%>%filter(!is.na(Year))
+  return(alldat)
+}
+
+
+exceedance_chlA <- function(x){
+  chlA_Assess <- chlA_Assessment(x)
+  if(nrow(chlA_Assess) < 1){
+    return('No Chlorophyll a data for station ')
+  }else{
+    if(class(chlA_Assess$FDT_STA_ID)=="factor"){ # have to split this step up bc n stationID's affect how split performs
+      chlA_Assess$FDT_STA_ID <- droplevels(chlA_Assess$FDT_STA_ID) # have to drop unused levels from factor or it messes with split function and mixes up data in each list item
+    }
+    dat <- split(chlA_Assess,f=chlA_Assess$FDT_STA_ID)
+    holder <- list()
+    for(i in 1:length(dat)){
+      # Find two most recent years with >= 6 data points
+      step1 <- filter(dat[[i]],samplePerYear>=6) # verify enough samples
+      step2 <- filter(step1,Year %in% tail(sort(unique(step1$Year)),2)) %>% # get two most recent years from valid sample years 
+        mutate(ID305B_1 = as.character(filter(lakeStations, STATION_ID %in% unique(step1$FDT_STA_ID))$ID305B_1))
+      
+      if(nrow(step2)>1){ # only  do this if more than 1 year of data
+        if(step2$chlA_Exceedance[1]!=step2$chlA_Exceedance[2]){ # if the exceedances contradict one another in two years grab third year
+          step1alt <- filter(dat[[i]],samplePerYear>=6) # verify enough samples 
+          step2 <- filter(step1,Year %in% tail(sort(unique(step1$Year)),3)) %>% # get three most recent years from valid sample years
+            mutate(ID305B_1 = as.character(filter(lakeStations, STATION_ID %in% unique(step1$FDT_STA_ID))$ID305B_1))
+        }
+      }
+      holder[[i]] <-  step2
+    }
+    do.call(rbind,holder) # output table for user to review
+  }
+  
+}
+
 
