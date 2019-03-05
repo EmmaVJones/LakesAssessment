@@ -119,7 +119,11 @@ shinyUI(fluidPage(theme="yeti.css",
                                             tabPanel('Temperature',
                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
                                                                         in the TEMP_VIO, TEMP_SAMP, and TEMP_STAT columns in the station table.'),
-                                                     temperaturePlotlySingleStationUI('temperature'))#,
+                                                     temperaturePlotlySingleStationUI('temperature')),
+                                            tabPanel('Dissolved Oxygen',
+                                                     helpText('Review each site using the single site visualization section. The results from this analysis are reflected
+                                                                        in the DO_VIO, DO_SAMP, and DO_STAT columns in the station table.'),
+                                                     DOPlotlySingleStationUI('DO'))#,
                                             
                                           )))
                                

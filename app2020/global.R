@@ -24,7 +24,7 @@ source('newBacteriaStandard_workingUpdatedRecSeason.R') # version with 2/3 sampl
 
 
 
-modulesToReadIn <- c('temperature')#,'pH','DO','SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
+modulesToReadIn <- c('temperature','DO')#,'pH',,'SpCond','Salinity','TN','Ecoli','chlA','Enteroccoci', 'TP','sulfate',
                     # 'Ammonia', 'Chloride', 'Nitrate','metals', 'fecalColiform','SSC','Benthics')
 for (i in 1:length(modulesToReadIn)){
   source(paste('appModules/',modulesToReadIn[i],'Module.R',sep=''))
@@ -77,6 +77,33 @@ assessmentDetermination <- function(parameterDF,parameterAssessmentDF,parameter,
 
 
 # Station Table building functions
+quickStats <- function(parameterDataset, parameter){
+  if(nrow(parameterDataset) > 0 ){
+    results <- data.frame(VIO = nrow(filter(parameterDataset, exceeds == TRUE)),
+                          SAMP = nrow(parameterDataset)) %>%
+      mutate(exceedanceRate = as.numeric(format((VIO/SAMP)*100,digits=3)))
+    
+    if(results$VIO >= 1){outcome <- 'Review'} # for Mary
+    if(results$VIO >= 1 & results$exceedanceRate < 10.5){outcome <- 'Review'}
+    if(results$exceedanceRate > 10.5 & results$VIO >= 2 & results$SAMP > 10){outcome <- '10.5% Exceedance'}
+    if(results$VIO < 1 &results$exceedanceRate < 10.5 & results$SAMP > 10){outcome <- 'S'}
+    if(results$VIO >= 1 & results$SAMP <= 10){outcome <- 'Review'}
+    if(results$VIO < 1 & results$SAMP <= 10){outcome <- 'S'}
+    
+    
+    results <- mutate(results, STAT = outcome)
+    names(results) <- c(paste(parameter,names(results)[1], sep = '_'),
+                        paste(parameter,names(results)[2], sep = '_'),
+                        paste(parameter,names(results)[3], sep = '_'),
+                        paste(parameter,names(results)[4], sep = '_'))
+    #rename based on parameter entered
+    return(results)
+  } else {
+    z <- data.frame(VIO = NA, SAMP=NA, exceedanceRate= NA, STAT=NA)
+    names(z) <- paste(parameter,names(z), sep='_')
+    return(z)
+  }
+}
 
 concatinateUnique <- function(stuff){
   if(length(stuff)==1){
@@ -113,6 +140,9 @@ StationTableStartingData <- function(x){
   #WATERSHED_ID= substr(strsplit(as.character(concatinateUnique(x$ID305B_1), '-'))[[1]][2], 1, 3), 
   
 }
+
+
+
 
 #dataFrame <-ammonia
 #dateTimeColumn <- 'FDT_DATE_TIME2'
@@ -179,7 +209,7 @@ stratifiedLake <- function(x){
 
 #Max Temperature Exceedance Function
 temp_Assessment <- function(x){
-  temp <- dplyr::select(x,FDT_DATE_TIME,FDT_TEMP_CELCIUS, `Max Temperature (C)`)%>% # Just get relevant columns, 
+  temp <- dplyr::select(x,FDT_DATE_TIME, FDT_DEPTH, FDT_TEMP_CELCIUS, `Max Temperature (C)`)%>% # Just get relevant columns, 
     filter(!is.na(FDT_TEMP_CELCIUS))%>% #get rid of NA's
     mutate(TemperatureExceedance=ifelse(FDT_TEMP_CELCIUS > `Max Temperature (C)`,T,F))%>% # Identify where above max Temperature, 
     filter(TemperatureExceedance==TRUE) # Only return temp measures above threshold
@@ -189,13 +219,29 @@ temp_Assessment <- function(x){
 
 # Exceedance Rate Temperature
 exceedance_temp <- function(x){
-  temp <- dplyr::select(x,FDT_DATE_TIME,FDT_TEMP_CELCIUS,`Max Temperature (C)`)%>% # Just get relevant columns, 
+  temp <- dplyr::select(x,FDT_DATE_TIME,FDT_DEPTH, FDT_TEMP_CELCIUS,`Max Temperature (C)`)%>% # Just get relevant columns, 
     filter(!is.na(FDT_TEMP_CELCIUS)) #get rid of NA's
   temp_Assess <- temp_Assessment(x)
   
   temp_results <- assessmentDetermination(temp,temp_Assess,"temperature","Aquatic Life")
   return(temp_results)
 }
+
+# For station table, presented a little differently
+#Max Temperature Exceedance Function
+tempExceedances <- function(x){
+  temp <- dplyr::select(x,FDT_DATE_TIME,FDT_TEMP_CELCIUS, `Max Temperature (C)`)%>% # Just get relevant columns, 
+    filter(!is.na(FDT_TEMP_CELCIUS))%>% #get rid of NA's
+    rename(parameter = !!names(.[2]), limit = !!names(.[3])) %>% # rename columns to make functions easier to apply
+    mutate(exceeds = ifelse(parameter > limit, T, F)) # Identify where above max Temperature, 
+  
+  quickStats(temp, 'TEMP')
+}
+#tempExceedances(x)
+
+
+
+#### Dissolved Oxygen Assessment Functions ---------------------------------------------------------------------------------------------------
 
 #Min DO Exceedance Function
 DO_Assessment <- function(x,qualifier){ # qualifier allows you to run the analysis including many or few stratification qualifications
@@ -225,5 +271,15 @@ exceedance_DO <- function(x, qualifier){
   return(DO_results)
 }
 
-
+# For station table, presented a little differently
+DOExceedances_Min <- function(x){
+  DO <- dplyr::select(x,FDT_DATE_TIME2,DO,`Dissolved Oxygen Min (mg/L)`,LakeStratification)%>% # Just get relevant columns, 
+    filter(!is.na(DO)) %>% 
+    filter(LakeStratification %in% c("Epilimnion",NA)) %>%
+    rename(parameter = !!names(.[2]), limit = !!names(.[3])) %>% # rename columns to make functions easier to apply
+    mutate(exceeds = ifelse(parameter < limit, T, F)) # Identify where below min DO 
+  
+  quickStats(DO, 'DO')
+}
+#DOExceedances_Min(x)
 

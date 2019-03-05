@@ -62,7 +62,8 @@ temperaturePlotlySingleStationUI <- function(id){
              div(style = 'height:150px;overflow-y: scroll', tableOutput(ns('TempRangeTableAU')))),
       column(4, h5('Temperature exceedance statistics for the ',span(strong('assessment unit')),' are highlighted below.'),
              tableOutput(ns("AUTempExceedanceRate")))
-    )
+    ),
+    br(),br(), br()
     )
 }
 

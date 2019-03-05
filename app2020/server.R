@@ -104,6 +104,25 @@ shinyServer(function(input, output, session) {
   stationData <- eventReactive( input$stationSelection, {
     filter(AUData(), FDT_STA_ID %in% input$stationSelection) })
   
+  
+  # Create Data frame with all data within ID305B and stratification information
+  # Pool thermocline data to get 1 sample per day, not 2 with top/bottom time difference
+  stationDataDailySample <- reactive({
+    req(AUData())
+    dat <- AUData()
+    dat$FDT_DATE_TIME <- as.POSIXct(dat$FDT_DATE_TIME, format="%m/%d/%Y %H:%M")
+    
+    dat <- mutate(dat, SampleDate=format(FDT_DATE_TIME,"%m/%d/%y"))%>% # Separate sampling events by day
+      filter(!is.na(FDT_TEMP_CELCIUS))# remove any NA values to keep thermocline function happy
+    thermo <- stratifiedLake(dat)
+    thermo$ThermoclineDepth <- as.numeric(thermo$ThermoclineDepth)
+    dat2 <- plyr::join(dat,thermo,by=c('FDT_STA_ID','SampleDate'))%>%
+      mutate(LakeStratification= ifelse(FDT_DEPTH < ThermoclineDepth,"Epilimnion","Hypolimnion"))
+    return(dat2)
+  })
+  
+  
+  
   output$stationInfo <- DT::renderDataTable({ 
     req(stationData())
     z <- dplyr::select(stationData()[1,], FDT_STA_ID:STA_REC_CODE, Latitude:`Max Temperature (C)`) %>% 
@@ -136,6 +155,30 @@ shinyServer(function(input, output, session) {
   
   ## Station Table View Section
   
+  StationTablePrelimStuff <- reactive({
+    req(stationDataDailySample(),input$stationSelection)
+    
+    x <- filter(stationDataDailySample(), FDT_STA_ID %in% input$stationSelection)
+    
+    cbind(StationTableStartingData(x), tempExceedances(x),DOExceedances_Min(x)) %>% 
+      dplyr::select(-ends_with('exceedanceRate'))
+  })
+  
+  output$stationTableDataSummary <- DT::renderDataTable({
+    req(StationTablePrelimStuff())
+    DT::datatable(StationTablePrelimStuff(), extensions = 'Buttons', escape=F, rownames = F, editable = TRUE,
+                  options= list(scrollX = TRUE, pageLength = nrow(StationTablePrelimStuff),
+                                dom='Bt', buttons=list('copy',
+                                                       list(extend='csv',filename=paste('AssessmentResults_',paste(assessmentCycle,input$stationSelection, collapse = "_"),Sys.Date(),sep='')),
+                                                       list(extend='excel',filename=paste('AssessmentResults_',paste(assessmentCycle,input$stationSelection, collapse = "_"),Sys.Date(),sep=''))))) %>% 
+      formatStyle(c('TEMP_SAMP','TEMP_VIO','TEMP_STAT'), 'TEMP_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+      formatStyle(c('DO_SAMP','DO_VIO','DO_STAT'), 'DO_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) #%>%
+      #formatStyle(c('PH_SAMP','PH_VIO','PH_STAT'), 'PH_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+      #formatStyle(c('ECOLI_SAMP','ECOLI_VIO','ECOLI_STAT'), 'ECOLI_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+      
+  })
+      
+                                                 
   
   ## End station table section
   
@@ -163,21 +206,6 @@ shinyServer(function(input, output, session) {
   
   
   
-  # Create Data frame with all data within ID305B and stratification information
-  # Pool thermocline data to get 1 sample per day, not 2 with top/bottom time difference
-  stationDataDailySample <- reactive({
-    req(AUData())
-    dat <- AUData()
-    dat$FDT_DATE_TIME <- as.POSIXct(dat$FDT_DATE_TIME, format="%m/%d/%Y %H:%M")
-    
-    dat <- mutate(dat, SampleDate=format(FDT_DATE_TIME,"%m/%d/%y"))%>% # Separate sampling events by day
-      filter(!is.na(FDT_TEMP_CELCIUS))# remove any NA values to keep thermocline function happy
-    thermo <- stratifiedLake(dat)
-    thermo$ThermoclineDepth <- as.numeric(thermo$ThermoclineDepth)
-    dat2 <- plyr::join(dat,thermo,by=c('FDT_STA_ID','SampleDate'))%>%
-      mutate(LakeStratification= ifelse(FDT_DEPTH < ThermoclineDepth,"Epilimnion","Hypolimnion"))
-    return(dat2)
-  })
   
   
   
@@ -192,7 +220,7 @@ shinyServer(function(input, output, session) {
 
   
   ## DO Sub Tab ##------------------------------------------------------------------------------------------------------
-  #callModule(DOPlotlySingleStation,'DO', stationDataDailySample, stationSelected)
+  callModule(DOPlotlySingleStation,'DO', stationDataDailySample, stationSelected)
   
   
 })
