@@ -9,7 +9,7 @@ chlAPlotlySingleStationUI <- function(id){
       plotlyOutput(ns('chlAplotly')),
       br(),hr(),br(),
       fluidRow(
-        column(6, h5('Annual Chlorophyll a 90th percentiles for the ',span(strong('selected site')),' selected site are reported below.'),
+        column(6, h5('Annual Chlorophyll a 90th percentiles for the ',span(strong('selected site')),' are reported below.'),
                div(style = 'height:150px;overflow-y: scroll', tableOutput(ns('singleStationAnnualChla90thTable')))),
         column(6,  h5('Chlorophyll a exceedance statistics for the ',span(strong('selected site')),' are highlighted below. Note
                       whether or not the station meets the lacustrine zone requirement before making any final assessments.'),
@@ -34,7 +34,8 @@ chlAPlotlySingleStationUI <- function(id){
              h5('Chlorophyll a exceedance statistics for the ',span(strong('lake')),' are highlighted below. ',span(strong('(ONLY LACUSTRINE ZONE STATIONS):'))),
              tableOutput(ns('chla_exceedanceRate')),
              h5('Chlorophyll a exceedance statistics for the ',span(strong('lake')),' are highlighted below. ',span(strong('(ALL STATIONS):'))),
-             tableOutput(ns('chla_exceedanceRateALL'))   ))
+             tableOutput(ns('chla_exceedanceRateALL'))   )),
+    br(),br(), br()
       )
 }
 

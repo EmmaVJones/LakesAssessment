@@ -135,7 +135,9 @@ shinyUI(fluidPage(theme="yeti.css",
                                                      tabsetPanel(
                                                        tabPanel('Chlorophyll a',br(),
                                                                 chlAPlotlySingleStationUI('chlA')),
-                                                       tabPanel('Total Phosphorus',br())
+                                                       tabPanel('Total Phosphorus',br(),
+                                                                h5('Chlorophyll a and total phosphorus are used when algaecides are applied within any zone of the lake/reservoir.'),
+                                                                TPPlotlySingleStationUI("TP"))
                                                      ))
                                             
                                           )))

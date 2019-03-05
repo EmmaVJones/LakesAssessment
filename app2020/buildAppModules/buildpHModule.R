@@ -59,7 +59,8 @@ pHPlotlySingleStationUI <- function(id){
                 WQS review due to natural pH fluctuations. In lakes that are not in Section 187, the waterbody would be listed as impaired
                 (Category 5A). See lakes/reservoirs assessment flowchart for additional guidance.')),
       column(4, h5('Individual pH exceedance statistics for the ',span(strong('assessment unit')),' are highlighted below.'),
-             tableOutput(ns("AUpHExceedanceRate"))))
+             tableOutput(ns("AUpHExceedanceRate")))),
+    br(),br(), br()
   )
 }
 
