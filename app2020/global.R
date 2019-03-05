@@ -9,6 +9,7 @@ library(raster)
 library(DT)
 library(FSA)
 library(RColorBrewer)
+library(lubridate)
 
 #####################################   UPDATE EACH NEW TOOL REBUILD #############################################
 # Establish Assessment Period 
@@ -450,3 +451,81 @@ exceedance_TP <- function(x){
   do.call(rbind,holder) # output table for user to review
 }
 
+
+
+### Bacteria Old
+
+bacteria_ExceedancesGeomeanOLD <- function(x, bacteriaType, geomeanLimit){
+  if(nrow(x) > 0){
+    suppressWarnings(mutate(x, SampleDate = format(FDT_DATE_TIME2,"%m/%d/%y"), # Separate sampling events by day
+                            previousSample=lag(SampleDate,1),previousSampleBacteria=lag(get(bacteriaType),1)) %>% # Line up previous sample with current sample line
+                       rowwise() %>% 
+                       mutate(sameSampleMonth= as.numeric(strsplit(SampleDate,'/')[[1]][1])  -  as.numeric(strsplit(previousSample,'/')[[1]][1])) %>% # See if sample months are the same, e.g. more than one sample per calendar month
+                       filter(sameSampleMonth == 0 | is.na(sameSampleMonth)) %>% # keep only rows with multiple samples per calendar month  or no previous sample (NA) to then test for geomean
+                       # USING CALENDAR MONTH BC THAT'S HOW WRITTEN IN GUIDANCE, rolling 4 wk windows would have been more appropriate
+                       mutate(sampleMonthYear = paste(month(as.Date(SampleDate,"%m/%d/%y")),year(as.Date(SampleDate,"%m/%d/%y")),sep='/')) %>% # grab sample month and year to group_by() for next analysis
+                       group_by(sampleMonthYear) %>%
+                       mutate(geoMeanCalendarMonth = FSA::geomean(as.numeric(get(bacteriaType))), # Calculate geomean
+                              limit = geomeanLimit, samplesPerMonth = n()))
+  }
+  
+}
+
+bacteria_ExceedancesSTV_OLD <- function(x, STVlimit){                                    
+  x %>% rename(parameter = !!names(.[2])) %>% # rename columns to make functions easier to apply
+    mutate(limit = STVlimit, exceeds = ifelse(parameter > limit, T, F)) # Single Sample Maximum 
+}
+
+# How bacteria is assessed
+bacteria_Assessment_OLD <- function(x, bacteriaType, geomeanLimit, STVlimit){
+  bacteria <- dplyr::select(x,FDT_DATE_TIME2,bacteriaType)%>% # Just get relavent columns, 
+    filter(!is.na(get(bacteriaType))) #get rid of NA's
+  # Geomean Analysis (if enough n)
+  if(nrow(bacteria)>0){
+    bacteriaGeomean <- bacteria_ExceedancesGeomeanOLD(bacteria, bacteriaType, geomeanLimit) %>%     
+      distinct(sampleMonthYear, .keep_all = T) %>%
+      filter(samplesPerMonth > 4, geoMeanCalendarMonth > limit) %>% # minimum sampling rule for geomean to apply
+      mutate(exceeds = TRUE) %>%
+      dplyr::select(sampleMonthYear, geoMeanCalendarMonth, limit, exceeds, samplesPerMonth)
+    geomeanResults <- quickStats(bacteriaGeomean, bacteriaType) %>%
+      mutate(`Assessment Method` = 'Old Monthly Geomean')
+    geomeanResults[,4] <- ifelse(is.na(geomeanResults[,4]),NA, dplyr::recode(geomeanResults[,4], 'Review' = paste('Review if ', bacteriaType,'_VIO > 1',sep='')))
+    
+    # Single Sample Maximum Analysis
+    bacteriaSSM <- bacteria_ExceedancesSTV_OLD(bacteria, STVlimit) 
+    SSMresults <- quickStats(bacteriaSSM, bacteriaType) %>% mutate(`Assessment Method` = 'Old Single Sample Maximum')
+    return( rbind(geomeanResults, SSMresults) )
+  }
+  
+}
+
+
+# Old bacteria standard boiled down to a single line as needed to go into stations table
+bacteriaExceedances_OLD <- function(results, bacteriaType){
+  # If no results to report, give nothing
+  if(length(results)>0){
+    # if geomean applied, use those results
+    if(grepl('Review',results[1,4])){
+      return(results[2,1:4])}
+    else{return(results[1,2:4])}
+  }else{
+    z <- data.frame(SAMP=NA, VIO = NA, exceedanceRate= NA, STAT=NA)
+    names(z) <- paste(bacteriaType,names(z), sep='_')
+    return(z)
+  }
+}
+
+
+
+####
+
+# Function to convert conventionals bacteria (e coli and enter) to format needed for function
+#bacteriaType <- 'E.COLI'#ENTEROCOCCI
+conventionalsToBacteria <- function(x, bacteriaType){
+  z <- dplyr::select(x, FDT_STA_ID, FDT_DATE_TIME2, bacteriaType) %>%
+    rename(ID = FDT_STA_ID, `Date Time` = FDT_DATE_TIME2, Value = bacteriaType) %>%
+    filter(!is.na(Value))
+  z$`Date Time` <- as.Date(z$`Date Time`)
+  z$Value <- as.numeric(z$Value)
+  return(z)
+}

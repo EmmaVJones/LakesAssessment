@@ -128,6 +128,10 @@ shinyUI(fluidPage(theme="yeti.css",
                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
                                                                         in the PH_VIO, PH_SAMP, and PH_STAT columns in the station table.'),
                                                      pHPlotlySingleStationUI('pH')),
+                                            tabPanel('Bacteria',
+                                                     helpText('Review each site using the single site visualization section. The results from this analysis are reflected
+                                                                        in the ECOLI_VIO, ECOLI_SAMP, and ECOLI_STAT columns in the station table.'),
+                                                     EcoliPlotlySingleStationUI('Ecoli')),
                                             tabPanel('Nutrients',
                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
                                                               in the NUT_TP_VIO, NUT_TP_SAMP, NUT_TP_STAT, NUT_CHLA_VIO, NUT_CHLA_SAMP, and NUT_CHLA_STAT columns 
