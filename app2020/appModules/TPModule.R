@@ -7,7 +7,7 @@ TPPlotlySingleStationUI <- function(id){
       plotlyOutput(ns('TPplotly')),
       br(),hr(),br(),
       fluidRow(
-        column(6, h5('Annual median Total Phosphorus for the ',span(strong('selected site')),' are reported below.'),
+        column(6, h5('Annual median Total Phosphorus for the ',span(strong('most recent two years at the selected site')),' are reported below.'),
                div(style = 'height:150px;overflow-y: scroll', tableOutput(ns('singleStationAnnualMedianTPtable')))),
         column(6,  h5('Total phosphorus exceedance statistics for the ',span(strong('selected site')),' are highlighted below. Note
                       whether or not the station meets the lacustrine zone requirement before making any final assessments.'),

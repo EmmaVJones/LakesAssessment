@@ -1,46 +1,4 @@
 
-lake_filter <- filter(lakeStations, SIGLAKENAME == 'Lake Moomaw')#'Talbott Reservoir')#'Claytor Lake')
-
-
-conventionals_Lake <- filter(conventionals, FDT_STA_ID %in% unique(lake_filter$FDT_STA_ID)) %>%
-  left_join(dplyr::select(lakeStations, FDT_STA_ID, SEC, CLASS, SPSTDS,PWS, ID305B_1, ID305B_2, ID305B_3,
-                          STATION_TYPE_1, STATION_TYPE_2, STATION_TYPE_3, ID305B, SEC187, SIG_LAKE, USE,
-                          SIGLAKENAME, Chlorophyll_A_limit, TPhosphorus_limit, Assess_TYPE), by='FDT_STA_ID')
-
-AUData <- filter(conventionals_Lake, ID305B_1 %in% "VAW-I03L_JKS01A02" |#"VAW-I03L_JKS02A02" "VAW-I03L_JKS03A02"
-                   ID305B_2 %in% "VAW-I03L_JKS01A02"  | 
-                   ID305B_2 %in% "VAW-I03L_JKS01A02" ) %>% 
-  left_join(WQSvalues, by = 'CLASS') 
-
-
-AUData <- filter(conventionals_Lake, ID305B_1 %in% "VAW-L42L_DAN01A02" | #"VAW-N16L_NEW01A02" "VAW-N16L_NEW01B14" "VAW-N17L_PKC01A10" "VAW-N17L_PKC02A10"
-                   ID305B_2 %in% "VAW-L42L_DAN01A02" | 
-                   ID305B_2 %in% "VAW-L42L_DAN01A02") %>% 
-  left_join(WQSvalues, by = 'CLASS') 
-
-
-
-dat <- AUData()
-dat$FDT_DATE_TIME <- as.POSIXct(dat$FDT_DATE_TIME, format="%m/%d/%Y %H:%M")
-
-dat <- mutate(dat, SampleDate=format(FDT_DATE_TIME,"%m/%d/%y"))%>% # Separate sampling events by day
-  filter(!is.na(FDT_TEMP_CELCIUS))# remove any NA values to keep thermocline function happy
-thermo <- stratifiedLake(dat)
-thermo$ThermoclineDepth <- as.numeric(thermo$ThermoclineDepth)
-stationDataDailySample <- plyr::join(dat,thermo,by=c('FDT_STA_ID','SampleDate'))%>%
-  mutate(LakeStratification= ifelse(FDT_DEPTH < ThermoclineDepth,"Epilimnion","Hypolimnion"))
-
-
-
-stationData <- filter(stationDataDailySample, FDT_STA_ID %in% "2-JKS046.40")#"4ADAN194.10") #"9-NEW087.14" "9-NEW089.34"
-
-
-
-
-
-
-
-
 
 
 EcoliPlotlySingleStationUI <- function(id){
@@ -182,7 +140,7 @@ EcoliPlotlySingleStation <- function(input,output,session, AUdata, stationSelect
     DT::datatable(z, rownames = FALSE, options= list(scrollX = TRUE, pageLength = nrow(z), scrollY = "250px", dom='t')) 
   })
   
- 
+  
   
   
   
@@ -242,86 +200,7 @@ EcoliPlotlySingleStation <- function(input,output,session, AUdata, stationSelect
   
   
   
- 
+  
   
   }
-
-
-
-
-
-ui <- fluidPage(
-  helpText('Review each site using the single site visualization section'),
-  selectInput('stationSelection', 'Station Selection', choices = unique(AUData$FDT_STA_ID)),
-  helpText('Review each site using the single site visualization section. The results from this analysis are reflected
-           in the NUT_TP_VIO, NUT_TP_SAMP, NUT_TP_STAT, NUT_CHLA_VIO, NUT_CHLA_SAMP, and NUT_CHLA_STAT columns 
-           in the station table.'),
-  EcoliPlotlySingleStationUI("Ecoli")
-)
-  
-
-server <- function(input,output,session){
-  
-  stationData <- eventReactive( input$stationSelection, {
-    filter(AUData, FDT_STA_ID %in% input$stationSelection) })
-  stationSelected <- reactive({input$stationSelection})
-  
-  
-  AUData <- reactive({filter(conventionals_Lake, ID305B_1 %in% "VAW-I03L_JKS01A02" |#"VAW-I03L_JKS02A02" "VAW-I03L_JKS03A02"
-                               ID305B_2 %in% "VAW-I03L_JKS01A02"  | 
-                               ID305B_2 %in% "VAW-I03L_JKS01A02" ) %>% 
-      left_join(WQSvalues, by = 'CLASS')  })
-  
-  
-  #AUData <- reactive({filter(conventionals_Lake, ID305B_1 %in% "VAW-L42L_DAN01A02" | #"VAW-N16L_NEW01A02" "VAW-N16L_NEW01B14" "VAW-N17L_PKC01A10" "VAW-N17L_PKC02A10"
-  #                             ID305B_2 %in% "VAW-L42L_DAN01A02" | 
-  #                             ID305B_2 %in% "VAW-L42L_DAN01A02") %>% 
-  #    left_join(WQSvalues, by = 'CLASS') })
-  
-  # Create Data frame with all data within ID305B and stratification information
-  # Pool thermocline data to get 1 sample per day, not 2 with top/bottom time difference
-  stationDataDailySample <- reactive({
-    req(AUData())
-    dat <- AUData()
-    dat$FDT_DATE_TIME <- as.POSIXct(dat$FDT_DATE_TIME, format="%m/%d/%Y %H:%M")
-    
-    dat <- mutate(dat, SampleDate=format(FDT_DATE_TIME,"%m/%d/%y"))%>% # Separate sampling events by day
-      filter(!is.na(FDT_TEMP_CELCIUS))# remove any NA values to keep thermocline function happy
-    thermo <- stratifiedLake(dat)
-    thermo$ThermoclineDepth <- as.numeric(thermo$ThermoclineDepth)
-    dat2 <- plyr::join(dat,thermo,by=c('FDT_STA_ID','SampleDate'))%>%
-      mutate(LakeStratification= ifelse(FDT_DEPTH < ThermoclineDepth,"Epilimnion","Hypolimnion"))
-    return(dat2)
-  })
-  
-  callModule(EcoliPlotlySingleStation,'Ecoli', stationDataDailySample, stationSelected)
-  
-  
-}
-
-shinyApp(ui,server)
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
-
 

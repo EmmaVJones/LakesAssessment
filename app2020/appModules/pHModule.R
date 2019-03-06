@@ -19,7 +19,7 @@ pHPlotlySingleStationUI <- function(id){
              div(style = 'height:150px;overflow-y: scroll', tableOutput(ns('pHRangeTableAU'))),
              h5(strong("Assessment Guidance:")),
              p('In cases where the applicable nutrient criteria are met for the man-made lakes/reservoirs listed in Section 187 but
-               the maximum pH criterion is exceeded, the lake or resrvoir should be classified as Category 4C and recommended for a 
+               the maximum pH criterion is exceeded, the lake or reservoir should be classified as Category 4C and recommended for a 
                WQS review due to natural pH fluctuations. In lakes that are not in Section 187, the waterbody would be listed as impaired
                (Category 5A). See lakes/reservoirs assessment flowchart for additional guidance.')),
       column(4, h5('Individual pH exceedance statistics for the ',span(strong('assessment unit')),' are highlighted below.'),

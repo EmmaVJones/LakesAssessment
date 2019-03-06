@@ -90,7 +90,7 @@ nonOverlappingIntervals <- function(results, withinRec, last2years){
   if(withinRec == T){ results <- filter(results, `Window Within Recreation Season` == withinRec) }
   #if(!any(is.na(last2years))){ 
   results <- mutate(results, yr= year(`Date Window Starts`)) %>%
-    filter(yr %in% last2years) %>% select(-yr)
+    filter(yr %in% last2years) %>% dplyr::select(-yr)
   #if(any(is.na(last2years))){ finalResults <- results}
   
   if(nrow(results) > 0){
@@ -105,7 +105,7 @@ nonOverlappingIntervals <- function(results, withinRec, last2years){
     
     uniqueInt <- unique(results$newInt)
     finalResults <- suppressWarnings(filter(results, `Date Window Ends` %in% as.Date(unique(results$newInt))) %>%
-                                       select(-newInt))
+                                       dplyr::select(-newInt))
   } else {
     finalResults <- results
   }

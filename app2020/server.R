@@ -248,9 +248,13 @@ shinyServer(function(input, output, session) {
   
   callModule(chlAPlotlySingleStation,'chlA', stationDataDailySample, stationSelected, allLakeLZdata)
   
-  ## Chlorophyll a Sub Tab ##------------------------------------------------------------------------------------------------------
+  ## Total Phosphorus Sub Tab ##------------------------------------------------------------------------------------------------------
   
   callModule(TPPlotlySingleStation,'TP', stationDataDailySample, stationSelected, allLakeLZdata)
+  
+  ## Ecoli Sub Tab ##------------------------------------------------------------------------------------------------------
+  
+  callModule(EcoliPlotlySingleStation,'Ecoli', stationDataDailySample, stationSelected)
   
   
 })

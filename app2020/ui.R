@@ -59,9 +59,9 @@ shinyUI(fluidPage(theme="yeti.css",
                       tabPanel('Lake Selection',
                                sidebarPanel(
                                  h4('Instructions:'),
-                                 p("Use the drop down box to select an Assessment Unit (AU) to assess. All AU's are organized by lake. 
+                                 p("Use the drop down box to select a lake/reservoir to assess. All AU's are organized by lake/reservoir. 
                                     The map will update based on your selection. Once you have reviewed the data below the map, proceed 
-                                    to the 'Lake Assessment' Tab to begin analyzing the AU."),
+                                    to the 'Assessment Unit Review' Tab to begin analyzing the lake/reservoir."),
                                  dynamicSelectInput('regionSelection', "Select DEQ Region to Assess", multiple = FALSE),
                                  dynamicSelectInput("lakeSelection", "Select Lake to Assess", multiple = FALSE)#,
                                  #dynamicSelectInput("AUselection", "Select Assessment Unit to Assess", multiple = FALSE)
@@ -131,7 +131,7 @@ shinyUI(fluidPage(theme="yeti.css",
                                             tabPanel('Bacteria',
                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
                                                                         in the ECOLI_VIO, ECOLI_SAMP, and ECOLI_STAT columns in the station table.'),
-                                                     EcoliPlotlySingleStationUI('Ecoli')),
+                                                     EcoliPlotlySingleStationUI("Ecoli")),
                                             tabPanel('Nutrients',
                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
                                                               in the NUT_TP_VIO, NUT_TP_SAMP, NUT_TP_STAT, NUT_CHLA_VIO, NUT_CHLA_SAMP, and NUT_CHLA_STAT columns 
