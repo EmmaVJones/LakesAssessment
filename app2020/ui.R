@@ -98,10 +98,10 @@ shinyUI(fluidPage(theme="yeti.css",
                                         violation of a standard. Parameters highlighted in red exceed the 10.5% exceedance rate. Both scenarios warrant further
                                         investigation and may requre comments in the Station Table and ADB.'),
                                DT::dataTableOutput('stationTableDataSummary'), br(), 
-                               h4('PWS violations'),
-                               helpText("Any PWS violations should noted in a station's COMMENT field of the Stations Table. The table below organizes 
-                                        PWS information to expedite the comment process."),
-                               DT::dataTableOutput('PWStable'),
+                               #h4('PWS violations'),
+                               #helpText("Any PWS violations should noted in a station's COMMENT field of the Stations Table. The table below organizes 
+                              #          PWS information to expedite the comment process."),
+                              # DT::dataTableOutput('PWStable'),
                                br(),hr(),br(),
                                h3('Assessment Unit Raw Data Review and Visualization'),
                                tabsetPanel(

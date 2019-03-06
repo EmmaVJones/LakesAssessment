@@ -77,6 +77,8 @@ assessmentDetermination <- function(parameterDF,parameterAssessmentDF,parameter,
 #assessmentDetermination(temp,temp_Assess,"temperature","Aquatic Life")
 
 
+
+######################################## NOTE DIFFERENCE IN REVIEW LOGIC IN COMPARISON TO RIVERINE APP #########################################
 # Station Table building functions
 quickStats <- function(parameterDataset, parameter){
   if(nrow(parameterDataset) > 0 ){
@@ -84,10 +86,10 @@ quickStats <- function(parameterDataset, parameter){
                           SAMP = nrow(parameterDataset)) %>%
       mutate(exceedanceRate = as.numeric(format((VIO/SAMP)*100,digits=3)))
     
-    if(results$VIO >= 1){outcome <- 'Review'} # for Mary
-    if(results$VIO >= 1 & results$exceedanceRate < 10.5){outcome <- 'Review'}
+    #if(results$VIO >= 1){outcome <- 'Review'} # for Paula
+    if(results$VIO >= 1 & results$SAMP > 10 & results$exceedanceRate < 10.5){outcome <- 'S'} # for Paula
     if(results$exceedanceRate > 10.5 & results$VIO >= 2 & results$SAMP > 10){outcome <- '10.5% Exceedance'}
-    if(results$VIO < 1 &results$exceedanceRate < 10.5 & results$SAMP > 10){outcome <- 'S'}
+    if(results$VIO <= 1 &results$exceedanceRate < 10.5 & results$SAMP > 10){outcome <- 'S'}
     if(results$VIO >= 1 & results$SAMP <= 10){outcome <- 'Review'}
     if(results$VIO < 1 & results$SAMP <= 10){outcome <- 'S'}
     
@@ -105,6 +107,9 @@ quickStats <- function(parameterDataset, parameter){
     return(z)
   }
 }
+######################################## NOTE DIFFERENCE IN REVIEW LOGIC IN COMPARISON TO RIVERINE APP #########################################
+
+
 
 concatinateUnique <- function(stuff){
   if(length(stuff)==1){
@@ -507,7 +512,7 @@ bacteriaExceedances_OLD <- function(results, bacteriaType){
     # if geomean applied, use those results
     if(grepl('Review',results[1,4])){
       return(results[2,1:4])}
-    else{return(results[1,2:4])}
+    else{return(results[1,1:4])}
   }else{
     z <- data.frame(SAMP=NA, VIO = NA, exceedanceRate= NA, STAT=NA)
     names(z) <- paste(bacteriaType,names(z), sep='_')
@@ -528,4 +533,28 @@ conventionalsToBacteria <- function(x, bacteriaType){
   z$`Date Time` <- as.Date(z$`Date Time`)
   z$Value <- as.numeric(z$Value)
   return(z)
+}
+
+
+# New bacteria station table function
+
+bacteriaExceedances_NEW <- function(stationData,bacteriaType){
+  # get assessment
+  z <- bacteriaAssessmentDecision(conventionalsToBacteria(stationData, 'E.COLI'), 10, 410, 126)  %>%
+    distinct(`Assessment Decision`)  # only grab 1 record
+  
+  # Get assessment
+  if(str_detect( z$`Assessment Decision`, 'Insufficient Information')){decision <- 'IN'}
+  if(str_detect( z$`Assessment Decision`, 'Impaired')){decision <- 'Review'}
+  if(str_detect( z$`Assessment Decision`, 'Fully Supporting')) {decision <- 'FS'}
+  
+  
+  # Count samples taken in most recent 2 years
+  y <- bacteriaExceedances_NewStd(conventionalsToBacteria(stationData, 'E.COLI'), 10, 410, 126) 
+  # what are the last two years sampled? They get a bit of priority
+  last2years <- sort(unique(year(y$`Date Window Starts`)), TRUE)[1:2]
+  nSamples <- nrow(filter(y, (year(y$`Date Window Starts`) %in% last2years)))
+  
+  return(data.frame(ECOLI_VIO_SAMP_NEW = nSamples, ECOLI_STAT_NEW = decision))
+  
 }

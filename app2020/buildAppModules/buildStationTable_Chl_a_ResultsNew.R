@@ -13,9 +13,9 @@ AUData <- filter(conventionals_Lake, ID305B_1 %in% "VAW-I03L_JKS01A02" |#"VAW-I0
   left_join(WQSvalues, by = 'CLASS') 
 
 AUData <- filter(conventionals_Lake, ID305B_1 %in% "VAW-N16L_NEW01A02" | #"VAW-N16L_NEW01A02" "VAW-N16L_NEW01B14" "VAW-N17L_PKC01A10" "VAW-N17L_PKC02A10"
-           ID305B_2 %in% "VAW-N16L_NEW01A02" | 
-           ID305B_2 %in% "VAW-N16L_NEW01A02") %>% 
-    left_join(WQSvalues, by = 'CLASS') 
+                   ID305B_2 %in% "VAW-N16L_NEW01A02" | 
+                   ID305B_2 %in% "VAW-N16L_NEW01A02") %>% 
+  left_join(WQSvalues, by = 'CLASS') 
 
 AUData <- filter(conventionals_Lake, ID305B_1 %in% "VAW-L05L_CRV01A02" | 
                    ID305B_2 %in% "VAW-L05L_CRV01A02" | 
@@ -45,30 +45,19 @@ stationData <- stationDataDailySample
 
 
 
+ecoli <- filter(stationData, !is.na(`E.COLI`))
 
 
+newSTDbacteriaData <- conventionalsToBacteria(stationData, 'E.COLI') 
+z <- bacteriaAssessmentDecision(newSTDbacteriaData, 10, 410, 126)  %>%
+  distinct(`Assessment Decision`)  # only grab 1 record
 
 
-x <- stationData
+stationData<- stationData
 
 
-StationTableResults <- cbind(StationTableStartingData(x), tempExceedances(x),DOExceedances_Min(x),pHExceedances(x),
-                             bacteriaExceedances_OLD(bacteria_Assessment_OLD(x, 'E.COLI', 126, 235),'E.COLI') %>% 
-                               dplyr::rename('ECOLI_VIO_OLD' = 'E.COLI_VIO', 'ECOLI_SAMP_OLD'='E.COLI_SAMP', 'ECOLI_STAT_OLD'='E.COLI_STAT'),
-                             bacteriaExceedances_NEW(x, 'E.COLI'),
-                             # Placeholders
-                             data.frame(ENTER_VIO='Not Analyzed by App', ENTER_SAMP='Not Analyzed by App', ENTER_STAT='Not Analyzed by App', 
-                                        WAT_MET_VIO='Not Analyzed by App', WAT_MET_STAT='Not Analyzed by App', WAT_TOX_VIOv='Not Analyzed by App',
-                                        WAT_TOX_STAT='Not Analyzed by App', SED_MET_VIO='Not Analyzed by App', SED_MET_STAT='Not Analyzed by App', 
-                                        SED_TOX_VIO='Not Analyzed by App', SED_TOX_STAT='Not Analyzed by App', FISH_MET_VIO='Not Analyzed by App', 
-                                        FISH_MET_STAT='Not Analyzed by App', FISH_TOX_VIO='Not Analyzed by App', FISH_TOX_STAT='Not Analyzed by App',
-                                        BENTHIC_STAT='Not Analyzed by App'),
-                             
-                             'NUT_TP_VIO"    
-[43] "NUT_TP_SAMP"    "NUT_TP_STAT"    "NUT_CHLA_VIO"   "NUT_CHLA_SAMP"  "NUT_CHLA_STAT"
-data.frame(COMMENTS='Not Analyzed by App') 
-
-                             
-                             )
- # tempExceedances(x), DOExceedances_Min(x), pHExceedances(x),
+chlA_Exceedances_NEW <- function(stationData){
+  # get assessment
+  
+}
   
