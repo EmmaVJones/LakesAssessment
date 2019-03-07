@@ -45,7 +45,6 @@ stationData <- stationDataDailySample
 
 
 
-ecoli <- filter(stationData, !is.na(`E.COLI`))
 
 
 newSTDbacteriaData <- conventionalsToBacteria(stationData, 'E.COLI') 
@@ -53,11 +52,15 @@ z <- bacteriaAssessmentDecision(newSTDbacteriaData, 10, 410, 126)  %>%
   distinct(`Assessment Decision`)  # only grab 1 record
 
 
-stationData<- stationData
 
+ 
 
 chlA_Exceedances_NEW <- function(stationData){
   # get assessment
+  z <- exceedance_chlA(x)
   
+  result <- data.frame(NUT_CHLA_VIO = nrow(filter(z, chlA_Exceedance== TRUE)),	NUT_CHLA_SAMP = nrow(z),
+                       NUT_CHLA_STAT = ifelse(any(z$chlA_Exceedance)==TRUE,'Review','S'))
+  return(result)
 }
   

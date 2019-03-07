@@ -172,26 +172,44 @@ shinyServer(function(input, output, session) {
   
   ## Station Table View Section
   
-  StationTablePrelimStuff <- reactive({
+  StationTableStuff <- reactive({
     req(stationDataDailySample(),input$stationSelection)
     
     x <- filter(stationDataDailySample(), FDT_STA_ID %in% input$stationSelection)
     
-    cbind(StationTableStartingData(x), tempExceedances(x),DOExceedances_Min(x), pHExceedances(x)) %>% 
+
+    cbind(StationTableStartingData(x), tempExceedances(x),DOExceedances_Min(x),pHExceedances(x),
+          bacteriaExceedances_OLD(bacteria_Assessment_OLD(x, 'E.COLI', 126, 235),'E.COLI') %>% 
+            dplyr::rename('ECOLI_VIO_OLD' = 'E.COLI_VIO', 'ECOLI_SAMP_OLD'='E.COLI_SAMP', 'ECOLI_STAT_OLD'='E.COLI_STAT'),
+          bacteriaExceedances_NEW(x,'E.COLI', 10, 410, 126),
+          # Placeholders
+          data.frame(ENTER_VIO='Not Analyzed by App', ENTER_SAMP='Not Analyzed by App', ENTER_STAT='Not Analyzed by App', 
+                     WAT_MET_VIO='Not Analyzed by App', WAT_MET_STAT='Not Analyzed by App', WAT_TOX_VIOv='Not Analyzed by App',
+                     WAT_TOX_STAT='Not Analyzed by App', SED_MET_VIO='Not Analyzed by App', SED_MET_STAT='Not Analyzed by App', 
+                     SED_TOX_VIO='Not Analyzed by App', SED_TOX_STAT='Not Analyzed by App', FISH_MET_VIO='Not Analyzed by App', 
+                     FISH_MET_STAT='Not Analyzed by App', FISH_TOX_VIO='Not Analyzed by App', FISH_TOX_STAT='Not Analyzed by App',
+                     BENTHIC_STAT='Not Analyzed by App'),
+          TP_Exceedances(x), 
+          chlA_Exceedances(x),
+          data.frame(COMMENTS='Not Analyzed by App') )%>%
       dplyr::select(-ends_with('exceedanceRate'))
   })
   
   output$stationTableDataSummary <- DT::renderDataTable({
-    req(StationTablePrelimStuff())
-    DT::datatable(StationTablePrelimStuff(), extensions = 'Buttons', escape=F, rownames = F, editable = TRUE,
-                  options= list(scrollX = TRUE, pageLength = nrow(StationTablePrelimStuff),
+    req(StationTableStuff())
+    DT::datatable(StationTableStuff(), extensions = 'Buttons', escape=F, rownames = F, 
+                  options= list(scrollX = TRUE, pageLength = nrow(StationTableStuff),
                                 dom='Bt', buttons=list('copy',
                                                        list(extend='csv',filename=paste('AssessmentResults_',paste(assessmentCycle,input$stationSelection, collapse = "_"),Sys.Date(),sep='')),
                                                        list(extend='excel',filename=paste('AssessmentResults_',paste(assessmentCycle,input$stationSelection, collapse = "_"),Sys.Date(),sep=''))))) %>% 
-      formatStyle(c('TEMP_SAMP','TEMP_VIO','TEMP_STAT'), 'TEMP_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
-      formatStyle(c('DO_SAMP','DO_VIO','DO_STAT'), 'DO_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
-      formatStyle(c('PH_SAMP','PH_VIO','PH_STAT'), 'PH_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) #%>%
-      #formatStyle(c('ECOLI_SAMP','ECOLI_VIO','ECOLI_STAT'), 'ECOLI_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('TEMP_SAMP','TEMP_VIO','TEMP_STAT'), 'TEMP_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('DO_SAMP','DO_VIO','DO_STAT'), 'DO_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('PH_SAMP','PH_VIO','PH_STAT'), 'PH_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('ECOLI_SAMP_OLD','ECOLI_VIO_OLD','ECOLI_STAT_OLD'), 'ECOLI_STAT_OLD', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('ECOLI_STV_VIO','ECOLI_GEOMEAN_VIO','ECOLI_STAT_NEW'), 'ECOLI_STAT_NEW', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('NUT_TP_VIO','NUT_TP_SAMP','NUT_TP_STAT'), 'NUT_TP_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('NUT_CHLA_VIO','NUT_CHLA_SAMP','NUT_CHLA_STAT'), 'NUT_CHLA_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red')))
+        
       
   })
       

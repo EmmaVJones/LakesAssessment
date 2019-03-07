@@ -55,25 +55,36 @@ z <- bacteriaAssessmentDecision(newSTDbacteriaData, 10, 410, 126)  %>%
 
 stationData<- stationData
 bacteriaType <- 'E.COLI'
+sampleRequirement <- 10
+STV <- 410
+geomeanCriteria <- 126
 
-bacteriaExceedances_NEW <- function(stationData,bacteriaType){
+bacteriaExceedances_NEW <- function(stationData,bacteriaType, sampleRequirement, STV, geomeanCriteria){
   # get assessment
-  z <- bacteriaAssessmentDecision(conventionalsToBacteria(stationData, 'E.COLI'), 10, 410, 126)  %>%
+  z <- bacteriaAssessmentDecision(conventionalsToBacteria(stationData, 'E.COLI'), sampleRequirement, STV, geomeanCriteria)  %>%
     distinct(`Assessment Decision`)  # only grab 1 record
   
   # Get assessment
   if(str_detect( z$`Assessment Decision`, 'Insufficient Information')){decision <- 'IN'}
   if(str_detect( z$`Assessment Decision`, 'Impaired')){decision <- 'Review'}
   if(str_detect( z$`Assessment Decision`, 'Fully Supporting')) {decision <- 'FS'}
-  
+  if(str_detect( z$`Assessment Decision`, 'Observed effect')) {decision <- 'Review'} # put this last to capture any OE's
   
   # Count samples taken in most recent 2 years
-  y <- bacteriaExceedances_NewStd(conventionalsToBacteria(stationData, 'E.COLI'), 10, 410, 126) 
+  y <- bacteriaExceedances_NewStd(conventionalsToBacteria(stationData, 'E.COLI'), sampleRequirement, STV, geomeanCriteria) 
   # what are the last two years sampled? They get a bit of priority
   last2years <- sort(unique(year(y$`Date Window Starts`)), TRUE)[1:2]
-  nSamples <- nrow(filter(y, (year(y$`Date Window Starts`) %in% last2years)))
+  x <- filter(y, (year(y$`Date Window Starts`) %in% last2years))
   
-  return(data.frame(ECOLI_VIO_SAMP_NEW = nSamples, ECOLI_STAT_NEW = decision))
+  nSTVExceedances <- nrow(filter(x, `Window Within Recreation Season` == TRUE & `STV Exceedance Rate` > 10.5))
+  nGeomeanExceedances <- nrow(filter(x, `Window Within Recreation Season` == TRUE & 
+                                       `Samples in 90 Day Window` >= sampleRequirement &
+                                       `Geomean In Window` > geomeanCriteria))
+  s <- data.frame(STV_VIO = nSTVExceedances, GEOMEAN_VIO = nGeomeanExceedances, STAT_NEW = decision)
+  names(s) <- paste(bacteriaType, names(s), sep='_')
+  names(s) <- gsub('[.]','',names(s))
+    
+  return(s)
   
 }
-bacteriaExceedances_NEW(stationData,bacteriaType)
+bacteriaExceedances_NEW(stationData,bacteriaType, 10, 410, 126)
