@@ -48,7 +48,7 @@ stationData <- stationDataDailySample
 ecoli <- filter(stationData, !is.na(`E.COLI`))
 
 
-newSTDbacteriaData <- conventionalsToBacteria(stationData, 'E.COLI') 
+newSTDbacteriaData <- conventionalsToBacteria(stationData[0,], 'E.COLI') 
 z <- bacteriaAssessmentDecision(newSTDbacteriaData, 10, 410, 126)  %>%
   distinct(`Assessment Decision`)  # only grab 1 record
 
@@ -61,7 +61,7 @@ geomeanCriteria <- 126
 
 bacteriaExceedances_NEW <- function(stationData,bacteriaType, sampleRequirement, STV, geomeanCriteria){
   # get assessment
-  z <- bacteriaAssessmentDecision(conventionalsToBacteria(stationData, 'E.COLI'), sampleRequirement, STV, geomeanCriteria)  %>%
+  z <- bacteriaAssessmentDecision(conventionalsToBacteria(stationData, bacteriaType), sampleRequirement, STV, geomeanCriteria)  %>%
     distinct(`Assessment Decision`)  # only grab 1 record
   
   # Get assessment
@@ -71,7 +71,7 @@ bacteriaExceedances_NEW <- function(stationData,bacteriaType, sampleRequirement,
   if(str_detect( z$`Assessment Decision`, 'Observed effect')) {decision <- 'Review'} # put this last to capture any OE's
   
   # Count samples taken in most recent 2 years
-  y <- bacteriaExceedances_NewStd(conventionalsToBacteria(stationData, 'E.COLI'), sampleRequirement, STV, geomeanCriteria) 
+  y <- bacteriaExceedances_NewStd(conventionalsToBacteria(stationData, bacteriaType), sampleRequirement, STV, geomeanCriteria) 
   # what are the last two years sampled? They get a bit of priority
   last2years <- sort(unique(year(y$`Date Window Starts`)), TRUE)[1:2]
   x <- filter(y, (year(y$`Date Window Starts`) %in% last2years))

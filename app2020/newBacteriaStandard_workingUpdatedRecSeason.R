@@ -138,124 +138,135 @@ geomeanExceedance <- function(df, geomeanCriteria){
 # NO filtering of recreation season, so in theory this could run the citizen data, too.
 # Recreation season is noted as boolean with April 1 - October 31 compliance
 bacteriaAssessmentDecision <- function(x, sampleRequirement, STV, geomeanCriteria){
-  # Run assessment function
-  z <- bacteriaExceedances_NewStd(x,  sampleRequirement, STV, geomeanCriteria)   
   
-  # what are the last two years sampled? They get a bit of priority
-  last2years <- sort(unique(year(z$`Date Window Starts`)), TRUE)[1:2]
-  
-  # Deal with data not in last two years separately
-  dataNotInLast2years <- filter(z, !(year(z$`Date Window Starts`) %in% last2years))
-  OE <- ifelse(nrow(dataNotInLast2years) > 0, 
-               paste( STVexceedance_noWindowSize(dataNotInLast2years, STV), 
-                      geomeanExceedance(dataNotInLast2years, geomeanCriteria)), NA)  
-  
-  z <- filter(z, year(z$`Date Window Starts`) %in% last2years)
-  
-  
-  # Then make sure at least 2 independent 90 day windows present in dataset before testing for other things
-  nonOverlappingExceedanceResults <- nonOverlappingIntervals(z, FALSE, last2years)
-  if(nrow(nonOverlappingExceedanceResults) < 2){
-    # If 2+ STV hits in 90 days or geomean calculated on 90 day window exceed geomean criteria then impaired
-    if(!is.null(STVexceedance_noWindowSize(z, STV)) | !is.null(geomeanExceedance(z, geomeanCriteria))){
-      statement1 <- ifelse(!is.null(STVexceedance_noWindowSize(z, STV)),  '| 2 or more STV exceedances in a 90 day window |', '')
-      statement2 <- ifelse(!is.null(geomeanExceedance(z, STV)),  '| geomean exceedances in a 90 day window |', '')
-      statement <- paste('Dataset lacks two independent 90 day windows: Impaired',statement1, statement2)
-      return(mutate(z,`Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE)))) 
+  if(nrow(x)>0){
+    # Run assessment function
+    z <- bacteriaExceedances_NewStd(x,  sampleRequirement, STV, geomeanCriteria)   
+    
+    # what are the last two years sampled? They get a bit of priority
+    last2years <- sort(unique(year(z$`Date Window Starts`)), TRUE)[1:2]
+    
+    # Deal with data not in last two years separately
+    dataNotInLast2years <- filter(z, !(year(z$`Date Window Starts`) %in% last2years))
+    OE <- ifelse(nrow(dataNotInLast2years) > 0, 
+                 paste( STVexceedance_noWindowSize(dataNotInLast2years, STV), 
+                        geomeanExceedance(dataNotInLast2years, geomeanCriteria)), NA)  
+    
+    z <- filter(z, year(z$`Date Window Starts`) %in% last2years)
+    
+    
+    # Then make sure at least 2 independent 90 day windows present in dataset before testing for other things
+    nonOverlappingExceedanceResults <- nonOverlappingIntervals(z, FALSE, last2years)
+    if(nrow(nonOverlappingExceedanceResults) < 2){
+      # If 2+ STV hits in 90 days or geomean calculated on 90 day window exceed geomean criteria then impaired
+      if(!is.null(STVexceedance_noWindowSize(z, STV)) | !is.null(geomeanExceedance(z, geomeanCriteria))){
+        statement1 <- ifelse(!is.null(STVexceedance_noWindowSize(z, STV)),  '| 2 or more STV exceedances in a 90 day window |', '')
+        statement2 <- ifelse(!is.null(geomeanExceedance(z, STV)),  '| geomean exceedances in a 90 day window |', '')
+        statement <- paste('Dataset lacks two independent 90 day windows: Impaired',statement1, statement2)
+        return(mutate(z,`Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE)))) 
+      } else {
+        statement <- 'Dataset lacks two independent 90 day windows: Insufficient Information (Prioritize for follow-up Monitoring)'
+        return(mutate(z,`Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))  
+      }
     } else {
-      statement <- 'Dataset lacks two independent 90 day windows: Insufficient Information (Prioritize for follow-up Monitoring)'
-      return(mutate(z,`Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))  
+      # See if geomean method applies
+      geomeanApplies <- filter(z, `Samples in 90 Day Window` >= sampleRequirement)
+      
+      if(nrow(geomeanApplies) > 1){
+        geomeanExceedances <- filter(geomeanApplies, `Geomean In Window` > geomeanCriteria)
+        
+        # If any geomean exceedances then return all windows where geomean exceeds
+        if(nrow(geomeanExceedances) > 0){#} & any(year(geomeanExceedances$`Date Window Starts`) %in% last2years)){
+          return(mutate(geomeanExceedances,`Assessment Decision` = 
+                          'Impaired: geometric means calculated for the 90-day periods represented by 10+ samples do not meet the GM criterion'))
+        } else{ # If no geomean exceedances then dig into STV exceedances
+          
+          # Any STV exceedance rates > 10.5% in a 90 day window with 10+ samples?
+          STVexceedanceAfterPassingGeomean <- filter(z, `STV Exceedance Rate` >= 10.5)
+          if(nrow(STVexceedanceAfterPassingGeomean) > 0){
+            
+            # If any STV exceedance rate > 10.5% from 90 day windows with 10+ samples then impaired
+            STVexceedanceAnd10Samples <- filter(STVexceedanceAfterPassingGeomean, `Samples in 90 Day Window` >= 10)
+            if(nrow(STVexceedanceAnd10Samples) > 0 ){
+              return(mutate(STVexceedanceAnd10Samples, 
+                            `Assessment Decision` = 'Impaired: at least one 90 day window with 10+ samples and STV exceedance rate > 10.5%'))  }
+            
+            # If any STV exceedance rate > 10.5% from 90 day windows with <10 samples then test more
+            
+            # If 2+ STV exceedances in any size window
+            morethan1STVexceedanceInAnyWindow <- filter(STVexceedanceAfterPassingGeomean, `STV Exceedances In Window` >= 2)
+            if(nrow(morethan1STVexceedanceInAnyWindow) > 0){
+              
+              
+              return(mutate(morethan1STVexceedanceInAnyWindow, `Assessment Decision` = paste('Impaired: 2 or more STV exceedances in a 90 day window')))  
+            } else {
+              # Only other option is only 1 STV exceedance in any size window
+              nonOverlappingIntervalsPassingGeomeanButHave1STV <- nonOverlappingIntervals(geomeanApplies, TRUE, last2years) # EVJ edit to test passing geomean windows for independence
+              if(nrow(nonOverlappingIntervalsPassingGeomeanButHave1STV) >=2){
+                statement <- 'Fully Supporting: no geomean exceedances in 2+ non overlapping 90 day windows within the Recreation Season; Observed effect: window(s) present with < 10 samples and 1 STV Exceedance'
+                return(mutate(nonOverlappingIntervalsPassingGeomeanButHave1STV, 
+                              `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))  
+              } else {
+                statement <- 'Insufficient Information: meets geomean criteria but lacks at least two independent 90 day windows; Observed Effect: 1 STV exceedance in 90 day window with <= 10 samples (Prioritize for follow up monitoring)'
+                return(mutate(z, `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE)))) }
+            }
+          } else { 
+            # If no geomean exceedances and no STV exceedances in 90 day window 
+            
+            # First see if two independent 90 day windows passing geomean can render Fully Supporting
+            nonOverlappingIntervalsPassingGeomean <- nonOverlappingIntervals(geomeanApplies, TRUE, last2years)
+            if(nrow(nonOverlappingIntervalsPassingGeomean) >= 2 ){
+              # Means two or more nonoverlapping windows that fall in rec season
+              # Test for any observed effects before spitting out answer
+              STVexceedanceInDataset <- filter(z, `STV Exceedances In Window` > 0)
+              if(nrow(STVexceedanceInDataset) > 0){
+                statement <- 'Fully Supporting: no geomean exceedances in 2+ non overlapping 90 day windows within the Recreation Season; Observed Effect: window(s) present with 1 STV Exceedance'
+                return(mutate(nonOverlappingIntervalsPassingGeomean, 
+                              `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))  
+              } else {
+                statement <- 'Fully Supporting: no geomean exceedances in 2+ non overlapping 90 day windows within the Recreation Season'
+                return(mutate(nonOverlappingIntervalsPassingGeomean, 
+                              `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))  }
+            } else { # If no independent windows meeting geomean and STV needs additional sampling
+              # Test for any observed effects before spitting out answer
+              STVexceedanceInDataset <- filter(z, `STV Exceedances In Window` > 0)
+              if(nrow(STVexceedanceInDataset) > 0){
+                statement <- 'Insufficient Information: no geomean exceedances but STV exceedances noted. Dataset lacks 2+ non overlapping 90 day windows within Recreation Season'
+                return(mutate(z,  `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))    
+              } else {
+                statement <- 'Insufficient Information: no geomean or STV exceedances but dataset lacks 2+ non overlapping 90 day windows within Recreation Season'
+                return(mutate(z, `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))   }
+            }
+          }
+        }
+      } else { # These scenarios have no geomean criteria bc sampling < sampleRequirements
+        exceedsSTVrate <- filter(z, `STV Exceedance Rate` >= 10.5)
+        # First deal with no STV exceedance rate issues AND not enough data to assess geomean
+        if(nrow(exceedsSTVrate) == 0 ){
+          statement <- 'Insufficient Information: no 90 day windows with > 10.5% exceedance of STV but not enough samples in any 90 day window to assess geomean (Prioritize for follow up monitoring)'
+          return(mutate(z,`Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE)))) 
+        } else { # These have STV exceedance rate issues AND not enough data to assess geomean
+          moreThan2STVhitsInWindow <- filter(exceedsSTVrate, `STV Exceedances In Window` >= 2)
+          if(nrow(moreThan2STVhitsInWindow) >= 1){
+            # these have 2 or more hits in any given 90 day window
+            return(mutate(moreThan2STVhitsInWindow,`Assessment Decision` = 
+                            paste('Impaired: ',nrow(moreThan2STVhitsInWindow), '90 day window(s) with 2+ exceedances of STV but not enough samples in any 90 day window to assess geomean.',
+                                  nrow(nonOverlappingIntervals(moreThan2STVhitsInWindow, TRUE, last2years)),'of the 90 day window(s) with 2+ exceedances of STV were nonoverlapping and
+                                  within the Recreation Season.')))   
+          } else {
+            # These have 1 hit in any 90 day window but < 10 samples in said window(s) i.e. not enough info for geomean assessment
+            statement <- 'Insufficient Information: no 90 day windows with > 10.5% exceedance of STV but not enough samples in any 90 day window to assess geomean (Prioritize for follow up monitoring)'
+            return(mutate(z,`Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))
+          }
+        }
+        
+      }
     }
   } else {
-    # See if geomean method applies
-    geomeanApplies <- filter(z, `Samples in 90 Day Window` >= sampleRequirement)
-    
-    if(nrow(geomeanApplies) > 1){
-      geomeanExceedances <- filter(geomeanApplies, `Geomean In Window` > geomeanCriteria)
-      
-      # If any geomean exceedances then return all windows where geomean exceeds
-      if(nrow(geomeanExceedances) > 0){#} & any(year(geomeanExceedances$`Date Window Starts`) %in% last2years)){
-        return(mutate(geomeanExceedances,`Assessment Decision` = 
-                        'Impaired: geometric means calculated for the 90-day periods represented by 10+ samples do not meet the GM criterion'))
-      } else{ # If no geomean exceedances then dig into STV exceedances
-        
-        # Any STV exceedance rates > 10.5% in a 90 day window with 10+ samples?
-        STVexceedanceAfterPassingGeomean <- filter(z, `STV Exceedance Rate` >= 10.5)
-        if(nrow(STVexceedanceAfterPassingGeomean) > 0){
-          
-          # If any STV exceedance rate > 10.5% from 90 day windows with 10+ samples then impaired
-          STVexceedanceAnd10Samples <- filter(STVexceedanceAfterPassingGeomean, `Samples in 90 Day Window` >= 10)
-          if(nrow(STVexceedanceAnd10Samples) > 0 ){
-            return(mutate(STVexceedanceAnd10Samples, 
-                          `Assessment Decision` = 'Impaired: at least one 90 day window with 10+ samples and STV exceedance rate > 10.5%'))  }
-          
-          # If any STV exceedance rate > 10.5% from 90 day windows with <10 samples then test more
-          
-          # If 2+ STV exceedances in any size window
-          morethan1STVexceedanceInAnyWindow <- filter(STVexceedanceAfterPassingGeomean, `STV Exceedances In Window` >= 2)
-          if(nrow(morethan1STVexceedanceInAnyWindow) > 0){
-            
-            
-            return(mutate(morethan1STVexceedanceInAnyWindow, `Assessment Decision` = paste('Impaired: 2 or more STV exceedances in a 90 day window')))  
-          } else {
-            # Only other option is only 1 STV exceedance in any size window
-            nonOverlappingIntervalsPassingGeomeanButHave1STV <- nonOverlappingIntervals(geomeanApplies, TRUE, last2years) # EVJ edit to test passing geomean windows for independence
-            if(nrow(nonOverlappingIntervalsPassingGeomeanButHave1STV) >=2){
-              statement <- 'Fully Supporting: no geomean exceedances in 2+ non overlapping 90 day windows within the Recreation Season; Observed effect: window(s) present with < 10 samples and 1 STV Exceedance'
-              return(mutate(nonOverlappingIntervalsPassingGeomeanButHave1STV, 
-                            `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))  
-            } else {
-              statement <- 'Insufficient Information: meets geomean criteria but lacks at least two independent 90 day windows; Observed Effect: 1 STV exceedance in 90 day window with <= 10 samples (Prioritize for follow up monitoring)'
-              return(mutate(z, `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE)))) }
-          }
-        } else { 
-          # If no geomean exceedances and no STV exceedances in 90 day window 
-          
-          # First see if two independent 90 day windows passing geomean can render Fully Supporting
-          nonOverlappingIntervalsPassingGeomean <- nonOverlappingIntervals(geomeanApplies, TRUE, last2years)
-          if(nrow(nonOverlappingIntervalsPassingGeomean) >= 2 ){
-            # Means two or more nonoverlapping windows that fall in rec season
-            # Test for any observed effects before spitting out answer
-            STVexceedanceInDataset <- filter(z, `STV Exceedances In Window` > 0)
-            if(nrow(STVexceedanceInDataset) > 0){
-              statement <- 'Fully Supporting: no geomean exceedances in 2+ non overlapping 90 day windows within the Recreation Season; Observed Effect: window(s) present with 1 STV Exceedance'
-              return(mutate(nonOverlappingIntervalsPassingGeomean, 
-                            `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))  
-            } else {
-              statement <- 'Fully Supporting: no geomean exceedances in 2+ non overlapping 90 day windows within the Recreation Season'
-              return(mutate(nonOverlappingIntervalsPassingGeomean, 
-                            `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))  }
-          } else { # If no independent windows meeting geomean and STV needs additional sampling
-            # Test for any observed effects before spitting out answer
-            STVexceedanceInDataset <- filter(z, `STV Exceedances In Window` > 0)
-            if(nrow(STVexceedanceInDataset) > 0){
-              statement <- 'Insufficient Information: no geomean exceedances but STV exceedances noted. Dataset lacks 2+ non overlapping 90 day windows within Recreation Season'
-              return(mutate(z,  `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))    
-            } else {
-              statement <- 'Insufficient Information: no geomean or STV exceedances but dataset lacks 2+ non overlapping 90 day windows within Recreation Season'
-              return(mutate(z, `Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))   }
-          }
-        }
-      }
-    } else { # These scenarios have no geomean criteria bc sampling < sampleRequirements
-      exceedsSTVrate <- filter(z, `STV Exceedance Rate` >= 10.5)
-      # First deal with no STV exceedance rate issues AND not enough data to assess geomean
-      if(nrow(exceedsSTVrate) == 0 ){
-        statement <- 'Insufficient Information: no 90 day windows with > 10.5% exceedance of STV but not enough samples in any 90 day window to assess geomean (Prioritize for follow up monitoring)'
-        return(mutate(z,`Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE)))) 
-      } else { # These have STV exceedance rate issues AND not enough data to assess geomean
-        moreThan2STVhitsInWindow <- filter(exceedsSTVrate, `STV Exceedances In Window` >= 2)
-        if(nrow(moreThan2STVhitsInWindow) >= 1){
-          # these have 2 or more hits in any given 90 day window
-          return(mutate(moreThan2STVhitsInWindow,`Assessment Decision` = 
-                          paste('Impaired: ',nrow(moreThan2STVhitsInWindow), '90 day window(s) with 2+ exceedances of STV but not enough samples in any 90 day window to assess geomean')))   
-        } else {
-          # These have 1 hit in any 90 day window but < 10 samples in said window(s) i.e. not enough info for geomean assessment
-          statement <- 'Insufficient Information: no 90 day windows with > 10.5% exceedance of STV but not enough samples in any 90 day window to assess geomean (Prioritize for follow up monitoring)'
-          return(mutate(z,`Assessment Decision` = ifelse(is.na(OE), statement, paste(statement, OE))))
-        }
-      }
-      
-    }
+    return(tibble(StationID=NA, `Window Within Recreation Season`=NA, `Date Window Starts`=NA, `Date Window Ends`=NA,
+                  `Samples in 90 Day Window`=NA, `STV Exceedances In Window`=NA, `STV Exceedance Rate`=NA, `STV Assessment`=NA, 
+                  `Geomean In Window`=NA, `Geomean Assessment`=NA, associatedData=NA, `Assessment Decision`=NA))
   }
+  
+ 
 }
