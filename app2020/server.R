@@ -1,4 +1,4 @@
-#source('startupServer.R')
+source('startupServer.R')
 
 
 mapviewOptions(basemaps = c( "OpenStreetMap",'Esri.WorldImagery'),
@@ -184,7 +184,8 @@ shinyServer(function(input, output, session) {
           bacteriaExceedances_NEW(x,'E.COLI', 10, 410, 126),
           # Placeholders
           data.frame(ENTER_VIO='Not Analyzed by App', ENTER_SAMP='Not Analyzed by App', ENTER_STAT='Not Analyzed by App', 
-                     WAT_MET_VIO='Not Analyzed by App', WAT_MET_STAT='Not Analyzed by App', WAT_TOX_VIOv='Not Analyzed by App',
+                     ENTER_STV_VIO='Not Analyzed by App', ENTER_GEOMEAN_VIA='Not Analyzed by App', ENTER_STAT_NEW='Not Analyzed by App', 
+                     WAT_MET_VIO='Not Analyzed by App', WAT_MET_STAT='Not Analyzed by App', WAT_TOX_VIO='Not Analyzed by App',
                      WAT_TOX_STAT='Not Analyzed by App', SED_MET_VIO='Not Analyzed by App', SED_MET_STAT='Not Analyzed by App', 
                      SED_TOX_VIO='Not Analyzed by App', SED_TOX_STAT='Not Analyzed by App', FISH_MET_VIO='Not Analyzed by App', 
                      FISH_MET_STAT='Not Analyzed by App', FISH_TOX_VIO='Not Analyzed by App', FISH_TOX_STAT='Not Analyzed by App',

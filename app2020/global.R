@@ -394,7 +394,7 @@ exceedance_chlA <- function(x){
 
 # Station Table summary function
 
-chlA_Exceedances <- function(stationData){
+chlA_Exceedances <- function(x){
   # get assessment
   z <- exceedance_chlA(x)
   
@@ -469,7 +469,7 @@ exceedance_TP <- function(x){
 
 # Station Table summary function
 
-TP_Exceedances <- function(stationData){
+TP_Exceedances <- function(x){
   # get assessment
   z <- exceedance_TP(x)
   
