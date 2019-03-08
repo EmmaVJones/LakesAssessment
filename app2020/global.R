@@ -398,8 +398,13 @@ chlA_Exceedances <- function(x){
   # get assessment
   z <- exceedance_chlA(x)
   
-  result <- data.frame(NUT_CHLA_VIO = nrow(filter(z, chlA_Exceedance== TRUE)),	NUT_CHLA_SAMP = nrow(z),
-                       NUT_CHLA_STAT = ifelse(any(z$chlA_Exceedance)==TRUE,'Review','S'))
+  if( class(z) == 'character' && unique(z) == "No Chlorophyll a data for station "){
+    result <- data.frame(NUT_CHLA_VIO = NA,	NUT_CHLA_SAMP = NA, NUT_CHLA_STAT = NA)
+  } else {
+    result <- data.frame(NUT_CHLA_VIO = nrow(filter(z, chlA_Exceedance== TRUE)),	NUT_CHLA_SAMP = nrow(z),
+                         NUT_CHLA_STAT = ifelse(any(z$chlA_Exceedance)==TRUE,'Review','S'))
+  }
+  
   return(result)
 }
 
@@ -445,25 +450,33 @@ TP_Assessment <- function(x){
 
 exceedance_TP <- function(x){
   TP_Assess <- TP_Assessment(x)
-  if(class(TP_Assess$FDT_STA_ID)=="factor"){ # have to split this step up bc n stationID's affect how split performs
-    TP_Assess$FDT_STA_ID <- droplevels(TP_Assess$FDT_STA_ID) # have to drop unused levels from factor or it messes with split function and mixes up data in each list item
-  }
-  dat <- split(TP_Assess,f=TP_Assess$FDT_STA_ID)
-  holder <- list()
-  for(i in 1:length(dat)){
-    # Find two most recent years with >= 6 data points
-    step1 <- filter(dat[[i]],samplePerYear>=6) # verify enough samples
-    step2 <- filter(step1,Year %in% tail(sort(unique(step1$Year)),2)) # get two most recent years from valid sample years 
-    
-    if(nrow(step2)>1){ # only  do this if more than 1 year of data
-      if(step2$TP_Exceedance[1]!=step2$TP_Exceedance[2]){ # if the exceedances contradict one another in two years grab third year
-        step1alt <- filter(dat[[i]],samplePerYear>=6) # verify enough samples 
-        step2 <- filter(step1,Year %in% tail(sort(unique(step1$Year)),3)) # get three most recent years from valid sample years 
-      }
+  
+  if(nrow(TP_Assess)==0){
+    z <- data.frame(FDT_STA_ID = NA, Year = NA, samplePerYear = NA, medianTP = NA, 
+                    TPhosphorus_limit_ug_L = NA, TP_Exceedance = NA, LacustrineZone = NA)
+  } else {
+    if(class(TP_Assess$FDT_STA_ID)=="factor"){ # have to split this step up bc n stationID's affect how split performs
+      TP_Assess$FDT_STA_ID <- droplevels(TP_Assess$FDT_STA_ID) # have to drop unused levels from factor or it messes with split function and mixes up data in each list item
     }
-    holder[[i]] <-  step2
+    dat <- split(TP_Assess,f=TP_Assess$FDT_STA_ID)
+    holder <- list()
+    for(i in 1:length(dat)){
+      # Find two most recent years with >= 6 data points
+      step1 <- filter(dat[[i]],samplePerYear>=6) # verify enough samples
+      step2 <- filter(step1,Year %in% tail(sort(unique(step1$Year)),2)) # get two most recent years from valid sample years 
+      
+      if(nrow(step2)>1){ # only  do this if more than 1 year of data
+        if(step2$TP_Exceedance[1]!=step2$TP_Exceedance[2]){ # if the exceedances contradict one another in two years grab third year
+          step1alt <- filter(dat[[i]],samplePerYear>=6) # verify enough samples 
+          step2 <- filter(step1,Year %in% tail(sort(unique(step1$Year)),3)) # get three most recent years from valid sample years 
+        }
+      }
+      holder[[i]] <-  step2
+    }
+    z <- do.call(rbind,holder) # output table for user to review
   }
-  do.call(rbind,holder) # output table for user to review
+  return(z)
+  
 }
 
 
@@ -473,8 +486,12 @@ TP_Exceedances <- function(x){
   # get assessment
   z <- exceedance_TP(x)
   
-  result <- data.frame(NUT_TP_VIO = nrow(filter(z, TP_Exceedance== TRUE)),	NUT_TP_SAMP = nrow(z),
+  if(is.na(unique(z$FDT_STA_ID))){
+    result <- data.frame(NUT_TP_VIO = NA,	NUT_TP_SAMP = NA, NUT_TP_STAT = NA)
+  } else {
+    result <- data.frame(NUT_TP_VIO = nrow(filter(z, TP_Exceedance== TRUE)),	NUT_TP_SAMP = nrow(z),
                        NUT_TP_STAT = ifelse(any(z[['TP_Exceedance']])==TRUE,'Review','S'))
+  }
   return(result)
 }
 
