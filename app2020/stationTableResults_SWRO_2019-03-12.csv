@@ -1,0 +1,144 @@
+"ID305B_1","ID305B_2","ID305B_3","DEPTH","STATION_ID","REGION","STATION_TYPE_1","STATION_TYPE_2","STATION_TYPE_3","STATION_LAT","STATION_LON","WATERSHED_ID","VAHU6","TEMP_VIO","TEMP_SAMP","TEMP_STAT","DO_VIO","DO_SAMP","DO_STAT","PH_VIO","PH_SAMP","PH_STAT","ECOLI_VIO_OLD","ECOLI_SAMP_OLD","ECOLI_STAT_OLD","ECOLI_STV_VIO","ECOLI_GEOMEAN_VIO","ECOLI_STAT_NEW","ENTER_VIO","ENTER_SAMP","ENTER_STAT","WAT_MET_VIO","WAT_MET_STAT","WAT_TOX_VIOv","WAT_TOX_STAT","SED_MET_VIO","SED_MET_STAT","SED_TOX_VIO","SED_TOX_STAT","FISH_MET_VIO","FISH_MET_STAT","FISH_TOX_VIO","FISH_TOX_STAT","BENTHIC_STAT","NUT_TP_VIO","NUT_TP_SAMP","NUT_TP_STAT","NUT_CHLA_VIO","NUT_CHLA_SAMP","NUT_CHLA_STAT","COMMENTS","Last Cycle Comment"
+"VAS-Q13L_PNR01A02","NA","NA","S","6ACNR001.03","SWRO","L","TM","NA","37.20944444","-82.37333333","Q13","BS33",0,17,"S",0,17,"S",0,17,"S",0,17,"S",0,0,"IN","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App",,,,,,,"Not Analyzed by App","Flannagan Reservoir, Cranesnest Arm, monitored 2015-2016"
+"VAS-Q13L_PNR01A02","NA","NA","S, M, B","6APNR001.82","SWRO","L","NA","NA","37.23291667","-82.34405556","Q13","BS34",0,284,"S",43,106,"10.5% Exceedance",0,106,"S",0,7,"S",0,0,"IN","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App",0,1,"S",0,1,"S","Not Analyzed by App","John Flannagan Reservoir pooled data: Chla & TP (1 vio/7 obs) IN 2015
+John Flannagan Reservoir pooled data: DO (58/284) S; pH (3/284) S
+
+DO exceeded WQS mostly below 11M during stratification, at gage off SR 739, Class IV
+
+TSI scores:
+41.81
+40.32
+32.72
+35.58
+28.56
+33.04
+31.88"
+"VAS-Q13L_PNK01A02","NA","NA","S, M, B","6APNK001.26","SWRO","L","SS","NA","37.12444444","-82.63083333","Q13","BS28",0,100,"S",10,46,"10.5% Exceedance",0,46,"S",0,7,"S",0,0,"IN","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App",0,1,"S",0,1,"S","Not Analyzed by App","North Fork Pound Reservoir pooled data: Chla & TP (1 vio.7 obs) IN 2014
+North Fork Pound Reservoir pooled data: DO (17/99) S; pH (1/99) S
+ 
+Low DO measurements were at depth during stratification.
+
+TSI scores:
+42.33
+37.15
+38.55
+46.55
+41.92
+42.96"
+"VAS-P18L_PLL01L02","NA","NA","S, M, B","6BPLL012.79","SWRO","L","NA","NA","36.84666667","-82.67138889","P18","TP05",0,88,"S",1,24,"S",1,24,"S",0,7,"S",0,0,"IN","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App",0,1,"S",0,1,"S","Not Analyzed by App","Big Cherry Reservoir pooled data: Chla & TP (1 vio.7 obs) IN 2014
+Big Cherry Reservoir pooled data: DO (42/88) S; pH (54/88) IM
+
+DO exceedences were at depth during stratification
+
+TSI scores:
+44.27
+44.81
+44.91
+45.99
+46.25
+42.51
+
+Two largemouth bass composited samples collected on 8/30/2007 exceeded the VDH level of concern for Hg."
+"VAS-P20L_PWL01L02","NA","NA","S, M, B","6BPWL024.64","SWRO","L","NA","NA","36.84527778","-82.86694445","P20","TP07",30,142,"10.5% Exceedance",2,44,"S",4,44,"S",0,14,"S",0,0,"IN","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App",0,2,"S",0,2,"S","Not Analyzed by App","Lake Keokee  pooled data: Chla & TP (1 vio.7 obs) IN 2013
+Lake Keokee  pooled data: DO (44/77) S; pH (5/77) S
+
+The low DO only occurred below 3 M, during periods of stratification.
+
+TSI scores:
+58.91
+51.28
+59.36
+57.32
+54.12
+49.92
+40.00"
+"VAS-P11L_XAR01A02","NA","NA","S, M, B","6BXAR000.69","SWRO","L","NA","NA","36.9675","-82.53305556","P11","TC20",0,139,"S",1,60,"S",0,60,"S",0,14,"S",0,0,"IN","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App",0,2,"S",0,2,"S","Not Analyzed by App","Wise Reservoir pooled data: Chla & TP (1 vio.7 obs) IN 2013
+Wise Reservoir pooled data: DO (16/67) S; pH (0/67) S
+
+The low DO only occurred below 3 M, during periods of stratification.
+
+TSI scores:
+38.81
+42.37
+40.84
+41.68
+41.35
+44.22"
+"VAS-O11L_BRU01A02","NA","NA","S, M, B","6CBRU010.91","SWRO","L","NA","NA","36.84916667","-82.07333333","O11","TH34",0,52,"S",0,35,"S",0,35,"S",0,7,"S",0,0,"IN","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App",0,1,"S",0,1,"S","Not Analyzed by App","Hidden Valley Lake pooled data: Chla & TP (1 vio.14 obs) IN 2013, 2016
+
+Hidden Valley Lake pooled data: DO (16/105) S; pH (2/105) S
+
+DO exceedances occurred at depth.
+
+TSI scores:
+38.26
+34.66
+44.39
+39.95
+33.14
+39.32
+47.03
+39.57
+
+Class VI even though DGIF converted this lake to a warm water fishery."
+"VAS-O04L_HUN01A02","NA","NA","S, M, B","6CHUN004.76","SWRO","L","C","NA","36.87027778","-81.5225","O04","TH11",0,73,"S",0,29,"S",0,29,"S",1,7,"Review",0,0,"IN","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App",0,1,"S",0,1,"S","Not Analyzed by App","Hungry Mother Lake pooled data: Chla & TP (1 vio.7 obs) IN  2011
+Hungry Mother Lake pooled data: DO (26/75) S; pH (0/75) S
+
+DO exceedances occurred below 4 M during stratification.
+
+TSI scores:
+48.07
+36.31
+41.11
+34.59
+39.63
+41.09
+
+Fish were collected June 2007. 3 Largemouth bass individuals and one walleye composite  exceeded screening value for Hg."
+"VAS-O11L_LAU01A02","NA","NA","S, M, B","6CLAU001.84","SWRO","L","NA","NA","36.95527778","-81.81194444","O11","TH30",22,73,"10.5% Exceedance",2,40,"S",0,40,"S",0,7,"S",0,0,"IN","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App",0,1,"S",0,1,"S","Not Analyzed by App","Laurel Bed Lake pooled data: Chla (1 vio.14 obs)  & TP (2 vio.14 obs)  IN 2012, 2016
+Laurel Bed Lake pooled data: DO (50/149) S; pH 12/149) S
+
+DO excursions are below thermocline during summer months. TSI was below 60.
+
+TSI scores:
+45.29
+41.87
+36.83
+40.90
+39.99
+41.06
+43.68
+38.99
+38.82
+33.74
+33.36
+38.09
+37.77
+39.98"
+"VAS-O06L_SFH01A00","NA","NA","S, M, B","6CSFH062.93","SWRO","L","NONA","NA","36.59555556","-82.01083333","O06","TH19",0,206,"S",17,97,"10.5% Exceedance",0,97,"S",0,7,"S",0,0,"IN","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App",0,1,"S",0,1,"S","Not Analyzed by App","South Holston Lake pooled data: Chla & TP (1 vio.7 obs) IN 2015
+South Holston Lake pooled data: DO (61/206) S; pH (0/206) S
+
+DO excursions are below thermocline during summer months during 2015 monitoring. All TSI scores were below 60.
+
+TSI scores:
+41.28
+40.32
+42.09
+45.64
+39.05
+41.58
+43.63
+
+Fish tissue monitoring is recommended."
+"VAS-N10L_XBL01A02","NA","NA","S, M, B","9-XBL000.20","SWRO","L","NA","NA","36.86583333","-81.27416667","N10","NE28",0,76,"S",2,35,"S",0,35,"S",0,7,"S",0,0,"IN","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App","Not Analyzed by App",0,1,"S",0,1,"S","Not Analyzed by App","Rural Retreat Lake pooled data: Chla (1 vio.7 obs)  IN & TP (2 vio.7 obs) IN 2011
+Rural Retreat Lake pooled data: DO (29/75) S; pH (2/75) S
+
+Low DO measurements are below the thermocline.
+
+TSI scores:
+52.75
+42.72
+42.40
+45.32
+48.78
+46.14"

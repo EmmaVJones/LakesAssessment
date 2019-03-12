@@ -140,10 +140,10 @@ StationTableStartingData <- function(x){
              DEPTH = concatinateUnique(x$FDT_DEPTH_DESC), STATION_ID = concatinateUnique(x$FDT_STA_ID), REGION = changeDEQRegionName(concatinateUnique(x$Deq_Region)), 
              STATION_TYPE_1= concatinateUnique(x$STATION_TYPE_1), STATION_TYPE_2=concatinateUnique(x$STATION_TYPE_2), 
              STATION_TYPE_3= concatinateUnique(x$STATION_TYPE_3), STATION_LAT = concatinateUnique(x$Latitude), 
-             STATION_LON = concatinateUnique(x$Longitude), WATERSHED_ID= concatinateUnique(x$ID305B_1),
+             STATION_LON = concatinateUnique(x$Longitude), WATERSHED_ID= substr(strsplit(as.character(concatinateUnique(x$ID305B_1)), '-')[[1]][2], 1, 3),#concatinateUnique(x$ID305B_1),
              VAHU6 = concatinateUnique(x$Huc6_Vahu6) )
   # Should be this but issues with shiny application of function          
-  #WATERSHED_ID= substr(strsplit(as.character(concatinateUnique(x$ID305B_1), '-'))[[1]][2], 1, 3), 
+  #WATERSHED_ID= substr(strsplit(as.character(concatinateUnique(x$ID305B_1)), '-')[[1]][2], 1, 3)
   
 }
 

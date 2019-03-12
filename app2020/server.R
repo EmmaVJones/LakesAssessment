@@ -13,15 +13,12 @@ shinyServer(function(input, output, session) {
   load_data()
   
   
-  
-  
   ### Lake Selection Tab
   
   # Query AU's By Selectize arguments
   the_data <- reactive({lakeStations})
   region_filter <- shiny::callModule(dynamicSelect, 'regionSelection', the_data, "OFFICE_NM")
-  lake_filter <- shiny::callModule(dynamicSelect, "lakeSelection", region_filter, "SIGLAKENAME" )
-  #au_filter <- shiny::callModule(dynamicSelect, "AUselection", lake_filter, "ID305B" )
+  lake_filter <- shiny::callModule(dynamicSelect, "lakeSelection", the_data, "SIGLAKENAME" )
 
   
   # Station Map

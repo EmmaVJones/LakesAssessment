@@ -18,15 +18,14 @@ library(magrittr)
 source('global.R')
 ```
 
-This document walks users through runing the automated assessement for their region. Prior to this point, the user needs to have completed the necessary prerequisites. This dataset is a companion to the rivers and streams assessment application and is **NOT** final. The results cited in this table are identical to the app calculations and are meant for assessor review, QA, editing prior to finalizing.
+This document walks users through runing the automated assessement for their region. Prior to this point, the user needs to have completed the necessary prerequisites. This dataset is a companion to the lakes/reservoir assessment application and is **NOT** final. The results cited in this table are identical to the app calculations and are meant for assessor review, QA, editing prior to finalizing.
 
 # Prerequisites
-The user will have to have all conventionals data, water column metals, and sediment metals organized by Roger for the window. Additionally, the EDAS data needs to be exported and available for use. Last cycle's finalized regional assessment layer (shapefile with AUs) are the spatial component needed. Lastly, the assessor must have the stations 2.0 table for the upcoming cycle completely filled out in order to run the assessment. 
+The user will have to have all conventionals data organized by Roger for the window.  Last cycle's finalized regional assessment layer (shapefile with AUs) are the spatial component needed. Lastly, the assessor must have the stations 2.0 table for the upcoming cycle completely filled out in order to run the assessment with attached significant lake information. 
 
 ```{r datasources}
 # Regional AU layer from last cycle
-regionalAUs <- st_read('C:/HardDriveBackup/R/GitHub/Rivers-StreamsAssessment/GIS/draft2018_spatialData/va_2018_aus_riverineBRRO.shp') %>%
-  st_transform( st_crs(4326)) # transform to WQS84 for spatial intersection
+lakeAU <- st_read('GIS/draft2018IR_AUs/va_2018_aus_reservoir.shp')
 
 
 # Roger's conventionals data pull
@@ -57,18 +56,11 @@ conventionals <- read_csv('data/final2020data/CEDSWQM_2020_IR_DATA-CONVENTIONALS
 conventionals$FDT_DATE_TIME2 <- as.POSIXct(conventionals$FDT_DATE_TIME, format="%m/%d/%Y %H:%M")
 
 
-stationTable <- read_csv('processedStationData/draft2020data/RegionalResultsLake_BRRO.csv') %>%
-  as_tibble() %>%
-  filter(!is.na(OBJECTID))
-
-
-lakeStations <- read_csv('processedStationData/draft2020data/lakeStations2020draft.csv') %>%
-  # until all station data filled in filter out stuff that will bomb out app
-  filter(FDT_STA_ID != '4ADAN187.94')
+lakeStations <- read_csv('processedStationData/final2020data/lakeStations2020_SWRO.csv')
 
 
 
-monStationTemplate <- read_excel('data/tbl_ir_mon_stations_template.xlsx') # from X:\2018_Assessment\StationsDatabase\VRO
+monStationTemplate <- read_csv('data/newMonStationTemplate.csv') # from X:\2018_Assessment\StationsDatabase\VRO but added new bacteria columns
 
 
 ```
@@ -98,7 +90,8 @@ This loop runs the regional assessment for conventionals data for the input regi
 # this is the totally lazy way of doing this, need to write functions to process faster
 
 stationTableResults <- monStationTemplate %>%
-      mutate_all(as.character)
+      mutate_all(as.character) 
+
 # time it:
 startTime <- Sys.time()
 
@@ -163,7 +156,7 @@ for(i in 1:length(unique(lakeStations$SIGLAKENAME))){
   }
   
 timeDiff = Sys.time()- startTime
-rm(thermo);rm(stationData);rm(StationTableResults);rm(stationDataDailySample);rm(lake_filter);rm(conventionals_Lake);rm(AU)
+rm(thermo);rm(stationData);rm(StationTableResults);rm(stationDataDailySample);rm(lake_filter);rm(conventionals_Lake);rm(AUData)
 ```
 
 
@@ -174,7 +167,7 @@ Last thing, to help assessors speed up comment process and help identify where d
 
 ```{r attach previous cycle comments}
 stationTableResultsWithComments <- left_join(stationTableResults, 
-                                             dplyr::select(stationTable, STATION_ID, COMMENTS), by = 'STATION_ID') %>%
+                                             dplyr::select(lakeStations, STATION_ID, COMMENTS), by = 'STATION_ID') %>%
   rename('COMMENTS' = 'COMMENTS.x','Last Cycle Comment' = 'COMMENTS.y')
 ```
 
@@ -188,7 +181,7 @@ View(stationTableResultsWithComments)
 
 Save results.
 ```{r saveResults}
-write.csv(stationTableResultsWithComments, paste("stationTableResults",Sys.Date(),".csv",sep=''), row.names = FALSE, na="")
+write.csv(stationTableResultsWithComments, paste("stationTableResults_",unique(lakeStations$REGION),'_',Sys.Date(),".csv",sep=''), row.names = FALSE, na="")
 ```
 
 
