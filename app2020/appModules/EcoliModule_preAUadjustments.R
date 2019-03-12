@@ -1,4 +1,6 @@
 
+
+
 EcoliPlotlySingleStationUI <- function(id){
   ns <- NS(id)
   tagList(
@@ -40,40 +42,8 @@ EcoliPlotlySingleStationUI <- function(id){
                plotlyOutput(ns('EcoliplotlyZoom')))),
       br(), br(),
       h5(strong('Analyzed Data (Each window with an individual assessment decision)')),
-      DT::dataTableOutput(ns('analysisTable'))),
-    br(),hr(),br(),
-    h4('AU assessment results'),
-    h5('Bacteria in lakes is assessed by pooling the same day samples in an assessment unit, calculating the median, and then 
-       comparing the median to the standard. The daily AU median E. coli is presented in a table below, followed by both 
-       assessment methods for the AU.'),
-    dataTableOutput(ns('dailyMedianAUbacteria')),
-    hr(),
-    fluidRow(
-      column(6, 
-             h5('All E. coli records that fall outside the criteria for the ',span(strong('assessment unit')),' using the ',
-                span(strong('Old Standard')),' are highlighted below.'),
-             DT::dataTableOutput(ns('AUdailyMedianTable')),
-             h4(strong('Old Standard (Monthly Geomean = 126 CFU / 100 mL)')),
-             DT::dataTableOutput(ns('AU_EcoliexceedancesOldStdTableSingleSitegeomean')),
-             h4(strong('Old Standard (Single Sample Maximum = 235 CFU / 100 mL)')),
-             DT::dataTableOutput(ns('AU_EcoliexceedancesOldStdTableSingleSiteSTV')),br(),  br(), hr(), br(), br(), 
-             h4(strong('New Standard (STV= 410 CFU / 100 mL, geomean = 126 CFU / 100 mL with additional sampling requirements)')),
-             helpText('The below table highlights all analyzed windows ',strong('of daily median AU data'),' that have either STV violations OR geomean violations. Note
-                      the number of samples in the window, STV Assessment, and Geomean Assessment columns for context. These violations
-                      are important to understand the dataset, but assessment decision in the table to the right is where one should look
-                      for assistance choosing which of the potential violations are driving the decision. Explore the dataset in 
-                      90 day windows in the interactive graphs for each station in the AU above and the full dataset with assessment decisions paired with each window
-                      in the bottom-most table.'),
-             DT::dataTableOutput(ns('AU_EcoliexceedancesNEWStdTableSingleSite'))),
-      column(6, h5('Individual E. coli exceedance statistics for the ',span(strong('selected site')),' are highlighted below.'),
-             h4(strong('Old Standard (Single Sample Maximum = 235 CFU / 100 mL, geomean = 126 CFU / 100 mL)')), 
-             DT::dataTableOutput(ns("AU_EcoliOldStdTableSingleSite")), br(), br(), br(),  br(), br(),br(), br(),br(), br(), br(), br(), br(), br(), br(), br(), br(), br(), hr(), br(), br(),
-             h4(strong('New Standard (STV= 410 CFU / 100 mL, geomean = 126 CFU / 100 mL with additional sampling requirements)')), 
-             DT::dataTableOutput(ns("AU_EcoliNEWStdTableSingleSite")))),
-    h5(strong('Analyzed Data for entire AU (Each window with an individual assessment decision)')),
-    DT::dataTableOutput(ns('AU_analysisTable')),
-    br(),br(), br()
-    )
+      DT::dataTableOutput(ns('analysisTable')))
+      )
   
 }
 
@@ -144,96 +114,11 @@ EcoliPlotlySingleStation <- function(input,output,session, AUdata, stationSelect
     z <- bacteria_Assessment_OLD(Ecoli_oneStation(), 'E.COLI', 126, 235) %>% dplyr::select(`Assessment Method`,everything())
     DT::datatable(z, rownames = FALSE, options= list(scrollX = TRUE, pageLength = nrow(z), scrollY = "250px", dom='t'))})
   
-  ### AU results
-  
-  AUdailyMedian <- reactive({
-    req(AUdata())
-    filter(AUdata(), !is.na(E.COLI)) %>%
-      dplyr::select(FDT_STA_ID, FDT_DATE_TIME, FDT_DEPTH, E.COLI,SampleDate, FDT_DATE_TIME2) %>%
-      group_by(SampleDate) %>%
-      mutate(dailyAUmedianE.COLI = median(E.COLI)) %>%
-      arrange(SampleDate) %>%
-      dplyr::select(SampleDate, FDT_DATE_TIME, FDT_STA_ID, E.COLI, dailyAUmedianE.COLI, everything())
-  })
-  
-  output$dailyMedianAUbacteria <- DT::renderDataTable({
-    req(AUdailyMedian())
-    z <- AUdailyMedian()
-    z$FDT_DATE_TIME <- as.character(z$FDT_DATE_TIME)
-    DT::datatable(
-      dplyr::select(z, SampleDate:dailyAUmedianE.COLI), rownames = FALSE, 
-      options= list(scrollX = TRUE, pageLength = nrow(z), scrollY = "200px",dom='t')) 
-  })
-  
-  output$AU_EcoliexceedancesOldStdTableSingleSitegeomean <-  DT::renderDataTable({
-    req(AUdailyMedian())
-    z <- AUdailyMedian() %>%
-      ungroup() %>%
-      distinct(SampleDate, .keep_all = T) %>%
-      dplyr::select(FDT_DATE_TIME2,dailyAUmedianE.COLI)%>% # Just get relavent columns, 
-      filter(!is.na(dailyAUmedianE.COLI)) %>%
-      rename("E.COLI"="dailyAUmedianE.COLI")
-    
-    z1 <- bacteria_ExceedancesGeomeanOLD(z ,'E.COLI', 126) %>%
-      dplyr::select(FDT_DATE_TIME2, E.COLI, sampleMonthYear, geoMeanCalendarMonth, limit, samplesPerMonth) %>%
-      rename(FDT_DATE_TIME = FDT_DATE_TIME2, "dailyAUmedianE.COLI"='E.COLI') %>%# for user view consistency, same data, just different format for R purposes
-      filter(samplesPerMonth > 4, geoMeanCalendarMonth > limit) # minimum sampling rule for geomean to apply
-    
-    DT::datatable(z1, rownames = FALSE, options= list(scrollX = TRUE, pageLength = nrow(z1), scrollY = "250px", dom='t'))  })
-  
-  output$AU_EcoliexceedancesOldStdTableSingleSiteSTV <- DT::renderDataTable({
-    req(AUdailyMedian())
-    z <- bacteria_ExceedancesSTV_OLD(AUdailyMedian() %>%
-                                       ungroup() %>%
-                                       distinct(SampleDate, .keep_all = T) %>%
-                                       dplyr::select(FDT_DATE_TIME2,dailyAUmedianE.COLI)%>% # Just get relavent columns, 
-                                       filter(!is.na(dailyAUmedianE.COLI)) #get rid of NA's
-                                     , 235 ) %>%
-      filter(exceeds == T) %>%
-      mutate(FDT_DATE_TIME = as.character(FDT_DATE_TIME2), dailyAUmedianE.COLI = parameter) %>%
-      dplyr::select(FDT_DATE_TIME, dailyAUmedianE.COLI, limit, exceeds)
-    DT::datatable(z, rownames = FALSE, options= list(scrollX = TRUE, pageLength = nrow(z), scrollY = "250px", dom='t'))  })
-  
-  output$AU_EcoliOldStdTableSingleSite <- DT::renderDataTable({
-    req(AUdailyMedian())
-    
-    z <- AUdailyMedian() %>%
-      ungroup() %>%
-      distinct(SampleDate, .keep_all = T) %>%
-      dplyr::select(FDT_DATE_TIME2,dailyAUmedianE.COLI) %>% # Just get relavent columns, 
-      filter(!is.na(dailyAUmedianE.COLI)) %>%
-      dplyr::rename('E.COLI'= 'dailyAUmedianE.COLI')
-    
-    z1 <- bacteria_Assessment_OLD(z, 'E.COLI', 126, 235) %>% 
-      dplyr::select(`Assessment Method`,everything()) %>%
-      rename('dailyAUmedianE.COLI_VIO' = 'E.COLI_VIO', 'dailyAUmedianE.COLI_SAMP' = 'E.COLI_SAMP',
-             'dailyAUmedianE.COLI_exceedanceRate'= 'E.COLI_exceedanceRate', 'dailyAUmedianE.COLI_STAT' = 'E.COLI_STAT')
-    
-    DT::datatable(z1, rownames = FALSE, options= list(scrollX = TRUE, pageLength = nrow(z1), scrollY = "250px", dom='t'))})
-  
-  
-  
-  
-  
   
   ### New standard ----------------------------------------------------------------------------------
   newSTDbacteriaData <- reactive({
     req(Ecoli_oneStation())
     conventionalsToBacteria(Ecoli_oneStation(), 'E.COLI')})  
-  
-  newSTDbacteriaData_AU <- reactive({
-    req(AUdailyMedian())
-    z <- AUdailyMedian() %>%
-      ungroup() %>%
-      distinct(SampleDate, .keep_all = T) %>%
-      dplyr::select(SampleDate, dailyAUmedianE.COLI, FDT_DATE_TIME, FDT_DATE_TIME2) %>%
-      rename('Value'='dailyAUmedianE.COLI') %>%
-      mutate(ID='AUmedianData',`Date Time`= FDT_DATE_TIME2) %>%
-      dplyr::select(ID, `Date Time`, Value) %>%
-      filter(!is.na(Value))
-    z$`Date Time` <- as.Date(z$`Date Time`)
-    z$Value <- as.numeric(z$Value)
-    return(z)  })
   
   output$EcoliexceedancesNEWStdTableSingleSite <- DT::renderDataTable({
     req(Ecoli_oneStation(),newSTDbacteriaData())
@@ -254,6 +139,10 @@ EcoliPlotlySingleStation <- function(input,output,session, AUdata, stationSelect
       dplyr::select(`Assessment Method`, `Assessment Decision`) #only grab decision
     DT::datatable(z, rownames = FALSE, options= list(scrollX = TRUE, pageLength = nrow(z), scrollY = "250px", dom='t')) 
   })
+  
+  
+  
+  
   
   output$windowChoice <- renderUI({
     req(Ecoli_oneStation(),newSTDbacteriaData())
@@ -313,34 +202,5 @@ EcoliPlotlySingleStation <- function(input,output,session, AUdata, stationSelect
   
   
   
-  
-  output$AU_EcoliexceedancesNEWStdTableSingleSite <- DT::renderDataTable({
-    req(newSTDbacteriaData_AU())
-    z1 <- bacteriaExceedances_NewStd(newSTDbacteriaData_AU(), 10, 410, 126) %>% 
-      filter(`STV Exceedances In Window` > 0 | `Geomean In Window` > 126) %>%
-      dplyr::select(-associatedData) # remove embedded tibble to make table work
-    z1$`Date Window Starts` <- as.character(z1$`Date Window Starts`)
-    z1$`Date Window Ends` <- as.character(z1$`Date Window Ends`)
-    DT::datatable(z1, rownames = FALSE, options= list(scrollX = TRUE, pageLength = nrow(z1), scrollY = "250px", dom='t')) 
-  })
-  
-  output$AU_EcoliNEWStdTableSingleSite <- DT::renderDataTable({
-    req(newSTDbacteriaData_AU())
-    
-    z <- bacteriaAssessmentDecision(newSTDbacteriaData(), 10, 410, 126)  %>%
-      distinct(`Assessment Decision`) %>% # only grab 1 record
-      mutate(`Assessment Method`= 'New Recreation Standard') %>%
-      dplyr::select(`Assessment Method`, `Assessment Decision`) #only grab decision
-    DT::datatable(z, rownames = FALSE, options= list(scrollX = TRUE, pageLength = nrow(z), scrollY = "250px", dom='t')) 
-  })
-  
-  output$AU_analysisTable <- DT::renderDataTable({
-    req(newSTDbacteriaData_AU())
-    z <- bacteriaExceedances_NewStd(newSTDbacteriaData_AU(), 10, 410, 126) %>%
-      dplyr::select(-associatedData) # remove embedded tibble to make table work
-    DT::datatable(z, rownames = FALSE, options= list(scrollX = TRUE, pageLength = nrow(z), scrollY = "400px", dom='t'))
-  })
-  
-  
-  
   }
+
