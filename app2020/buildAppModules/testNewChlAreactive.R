@@ -1,15 +1,125 @@
-source('startupServer.R')
+# Run in R 3.5.2
+source('global.R')
 
 
-mapviewOptions(basemaps = c( "OpenStreetMap",'Esri.WorldImagery'),
-               vector.palette = colorRampPalette(brewer.pal(3, "Set1")),
-               na.color = "magenta",
-               legend=FALSE)
-
-
-
-
-shinyServer(function(input, output, session) {
+ui <- shinyUI(fluidPage(theme="yeti.css",
+                        shinyjs::useShinyjs(),
+                        div(
+                          id = "loading_page",
+                          h1("Loading...")
+                        ),
+                        hidden(
+                          div(
+                            id = "main_content",
+                            # suppress error messages as data loads, hacky
+                            tags$style(type="text/css",
+                                       ".shiny-output-error { visibility: hidden; }",
+                                       ".shiny-output-error:before { visibility: hidden; }"
+                            ),
+                            navbarPage(paste("VDEQ ",assessmentCycle," IR Lacustrine Assessment Tool", sep=''),
+                                       
+                                       tabPanel('Lake Selection',
+                                                fileInput('stationsTable','Choose your Regional Stations Table 2.0.',
+                                                          accept = c(".csv")),
+                                                sidebarPanel(
+                                                  h4('Instructions:'),
+                                                  p("Use the drop down box to select a lake/reservoir to assess. All AU's are organized by lake/reservoir. 
+                                                    The map will update based on your selection. Once you have reviewed the data below the map, proceed 
+                                                    to the 'Assessment Unit Review' Tab to begin analyzing the lake/reservoir."),
+                                                  #uiOutput("lake_filterUI")#,
+                                                  
+                                                  #dynamicSelectInput('regionSelection', "Select DEQ Region to Assess", multiple = FALSE),
+                                                  dynamicSelectInput("lakeSelection", "Select Lake to Assess", multiple = FALSE)#,
+                                                  ),
+                                                mainPanel(
+                                                  leafletOutput("lakeMap"),br(),
+                                                  h5(strong('Assessment units in selected lake')),
+                                                  DT::dataTableOutput('AUSummary'), br(),
+                                                  h5(strong('Stations in selected lake that were sampled in current window')),
+                                                  DT::dataTableOutput('stationSummary'))
+                                                ),
+                                       tabPanel('Assessment Unit Review',
+                                                fluidRow(column(9, DT::dataTableOutput('selectedLake')),
+                                                         column(3,br(),actionButton('pullLakeData','Select lake for analysis')#,
+                                                                #helpText('If the button above is disabled, there are no AUs in the selected lakes.')
+                                                         )),
+                                                hr(),
+                                                verbatimTextOutput('verbatim'),
+                                                uiOutput('AUSelection_'),
+                                                h5(strong('AU information from last cycle')),
+                                                DT::dataTableOutput('selectedAU'),br(),
+                                                uiOutput('stationSelection_'),
+                                                fluidRow(column(4, DT::dataTableOutput('stationInfo')),
+                                                         column(4, leafletOutput('stationMap', height = 300, width = 300),
+                                                                helpText("The AUs displayed on the map above represent all AUs associated with the selected
+                                                                         station (listed in a station's ID305B_1/ID305B_2/ID305B_3 fields) for context. ")),
+                                                         column(4, DT::dataTableOutput('stationHistoricalInfo'))),
+                                                hr(),
+                                                h3('Station Results for Review'),
+                                                helpText('This table outputs the site specific results for direct export to the Station Table. It also serves to highlight
+                                                         where exceedances are present and should be reviewed in the individual parameter visualization tabs below.'),
+                                                h4('Official Station Results Table'),
+                                                helpText('Note that WAT_TOX_VIO AND WAT_TOX_STAT are only reflecting ammonia analysis. Additionally, parameters are highlighted
+                                                         in different colors to indicate further review may be necessary. Parameters highlighted in yellow have at least one 
+                                                         violation of a standard. Parameters highlighted in red exceed the 10.5% exceedance rate. Both scenarios warrant further
+                                                         investigation and may requre comments in the Station Table and ADB.'),
+                                                DT::dataTableOutput('stationTableDataSummary'), br(), 
+                                                #h4('PWS violations'),
+                                                #helpText("Any PWS violations should noted in a station's COMMENT field of the Stations Table. The table below organizes 
+                                                #          PWS information to expedite the comment process."),
+                                                # DT::dataTableOutput('PWStable'),
+                                                br(),hr(),br(),
+                                                h3('Assessment Unit Raw Data Review and Visualization'),
+                                                tabsetPanel(
+                                                  tabPanel('Conventionals Data',
+                                                           tabsetPanel(
+                                                             tabPanel('Raw Data',br(),
+                                                                      DT::dataTableOutput('AURawData'),
+                                                                      h4('Data Summary'),
+                                                                      h5('Records Retrieved in Assessment Unit:'),
+                                                                      fluidRow(column(1),column(10,textOutput('stationDataTableRecords'))),
+                                                                      h5('Field and Lab Data in Assessment Window:'),
+                                                                      fluidRow(column(1),column(10,tableOutput('uniqueStationDataTableRecords'))),
+                                                                      h5('Assessment Window:'),
+                                                                      fluidRow(column(1),column(10,textOutput('stationDataTableAssessmentWindow'))), br(),br()),
+                                                             tabPanel('Temperature',
+                                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
+                                                                               in the TEMP_VIO, TEMP_SAMP, and TEMP_STAT columns in the station table.'),
+                                                                      temperaturePlotlySingleStationUI('temperature')),
+                                                             tabPanel('Dissolved Oxygen',
+                                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
+                                                                               in the DO_VIO, DO_SAMP, and DO_STAT columns in the station table.'),
+                                                                      DOPlotlySingleStationUI('DO')),
+                                                             tabPanel('pH',
+                                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
+                                                                               in the PH_VIO, PH_SAMP, and PH_STAT columns in the station table.'),
+                                                                      pHPlotlySingleStationUI('pH')),
+                                                             tabPanel('Bacteria',
+                                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
+                                                                        in the ECOLI_VIO, ECOLI_SAMP, and ECOLI_STAT columns in the station table.'),
+                                                                      EcoliPlotlySingleStationUI("Ecoli")),
+                                                             tabPanel('Nutrients',
+                                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
+                                                              in the NUT_TP_VIO, NUT_TP_SAMP, NUT_TP_STAT, NUT_CHLA_VIO, NUT_CHLA_SAMP, and NUT_CHLA_STAT columns 
+                                                              in the station table.'),
+                                                                      tabsetPanel(
+                                                                        tabPanel('Chlorophyll a',br(),
+                                                                                 chlAPlotlySingleStationUI('chlA')),
+                                                                        tabPanel('Total Phosphorus',br(),
+                                                                                 h5("Total phosphorus is assessed only when algaecides are applied within any zone of the lake/reservoir.
+                                                                   It is the assessor's responsibility to remove the Chlorophyll a assessment from the autogenerated stations
+                                                                   table if algaecides are noted anywhere in the lake/reservoir."),
+                                                                                 TPPlotlySingleStationUI("TP"))
+                                                                      ))
+                                                             
+                                                             )))
+                                                
+                                                           )
+                                                )))
+                                                  )
+                                                )              
+              
+server <- shinyServer(function(input, output, session) {
   
   # display the loading feature until data loads into app
   load_data()
@@ -43,7 +153,7 @@ shinyServer(function(input, output, session) {
   #  req(input$lakeSelection)
   #  filter(lakeStations(), SIGLAKENAME %in% input$lakeSelection)
   #})
-
+  
   
   # Station Map
   output$lakeMap <- renderLeaflet({
@@ -148,7 +258,7 @@ shinyServer(function(input, output, session) {
   allLakeLZdata <- reactive({
     req(stationDataDailySample())
     sigLake <- as.character(AUData()$SIGLAKENAME)
-    allLakeLZstations <- as.character(filter(lakeStations(),SIGLAKENAME %in% sigLake)$STATION_ID)
+    allLakeLZstations <- as.character(filter(lakeStations,SIGLAKENAME %in% sigLake)$STATION_ID)
     allLakeLZData <- filter(conventionals,FDT_STA_ID %in% allLakeLZstations)
     allLakeLZData$FDT_DATE_TIME <- as.POSIXct(allLakeLZData$FDT_DATE_TIME, format="%m/%d/%Y %H:%M")
     allLakeLZData<- mutate(allLakeLZData, SampleDate=format(FDT_DATE_TIME,"%m/%d/%y"))%>% # Separate sampling events by day
@@ -157,7 +267,7 @@ shinyServer(function(input, output, session) {
     thermo$ThermoclineDepth <- as.numeric(thermo$ThermoclineDepth)
     allLakeLZData2 <- plyr::join(allLakeLZData,thermo,by=c('FDT_STA_ID','SampleDate'))%>%
       mutate(LakeStratification= ifelse(FDT_DEPTH < ThermoclineDepth,"Epilimnion","Hypolimnion"))%>%
-      plyr::join(dplyr::select(lakeStations(), Chlorophyll_A_limit, TPhosphorus_limit, Assess_TYPE, FDT_STA_ID), by='FDT_STA_ID')
+      plyr::join(dplyr::select(lakeStations, Chlorophyll_A_limit, TPhosphorus_limit, Assess_TYPE, FDT_STA_ID), by='FDT_STA_ID')
     return(allLakeLZData2)
   })
   
@@ -192,6 +302,7 @@ shinyServer(function(input, output, session) {
       t() %>% as.data.frame() %>% rename(`Station Information From Last Cycle` = 1)
     DT::datatable(z, options= list(pageLength = nrow(z), scrollY = "250px", dom='t'))  })
   
+  
   ## Station Table View Section
   
   StationTableStuff <- reactive({
@@ -206,7 +317,7 @@ shinyServer(function(input, output, session) {
       chlA_Exceedances_result <- data.frame(NUT_CHLA_VIO = NA,	NUT_CHLA_SAMP = NA, NUT_CHLA_STAT = NA)
     } else {
       chlA_Exceedances_result <- data.frame(NUT_CHLA_VIO = nrow(filter(chlA_Exceedances, chlA_Exceedance== TRUE)),	NUT_CHLA_SAMP = nrow(chlA_Exceedances),
-                                            NUT_CHLA_STAT = ifelse(any(chlA_Exceedances$chlA_Exceedance)==TRUE,'Review','S'))
+                           NUT_CHLA_STAT = ifelse(any(chlA_Exceedances$chlA_Exceedance)==TRUE,'Review','S'))
     }
     
     cbind(StationTableStartingData(x), tempExceedances(x),DOExceedances_Min(x),pHExceedances(x),
@@ -296,7 +407,6 @@ shinyServer(function(input, output, session) {
   ## Chlorophyll a Sub Tab ##------------------------------------------------------------------------------------------------------
   
   callModule(chlAPlotlySingleStation,'chlA', stationDataDailySample, stationSelected, allLakeLZdata, lakeStations)
-  #callModule(chlAPlotlySingleStation,'chlA', stationDataDailySample, stationSelected, allLakeLZdata)
   
   ## Total Phosphorus Sub Tab ##------------------------------------------------------------------------------------------------------
   
@@ -307,6 +417,7 @@ shinyServer(function(input, output, session) {
   callModule(EcoliPlotlySingleStation,'Ecoli', stationDataDailySample, stationSelected)
   
   
-  
 })
 
+
+shinyApp(ui, server)

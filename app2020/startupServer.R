@@ -32,4 +32,5 @@ conventionals$FDT_DATE_TIME2 <- as.POSIXct(conventionals$FDT_DATE_TIME, format="
 lakeAU <- st_read('GIS/draft2018IR_AUs/va_2018_aus_reservoir.shp')
 
 #lakeStations <- read_csv('processedStationData/draft2020data/lakeStations2020draft.csv')
-lakeStations <- read_csv('processedStationData/final2020data/lakeStations2020_SWRO.csv')
+#lakeStations <- read_csv('processedStationData/final2020data/lakeStations2020_SWRO.csv')
+#lakeStations <- read_csv('processedStationData/final2020data/lakeStations2020_BRRO.csv')

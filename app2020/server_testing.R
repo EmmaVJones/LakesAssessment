@@ -7,8 +7,6 @@ mapviewOptions(basemaps = c( "OpenStreetMap",'Esri.WorldImagery'),
                legend=FALSE)
 
 
-
-
 shinyServer(function(input, output, session) {
   
   # display the loading feature until data loads into app
@@ -25,24 +23,21 @@ shinyServer(function(input, output, session) {
   
   # Query AU's By Selectize arguments
   #the_data <- reactive({lakeStations})
-  the_data <- reactive({lakeStations()})
+  #the_data <- reactive({lakeStations()})
   #region_filter <- shiny::callModule(dynamicSelect, 'regionSelection', the_data, "OFFICE_NM")
-  lake_filter <- shiny::callModule(dynamicSelect, "lakeSelection", the_data, "SIGLAKENAME" )
+  #lake_filter <- shiny::callModule(dynamicSelect, "lakeSelection", the_data, "SIGLAKENAME" )
   
+  output$lake_filterUI <- uiOutput({
+    req(lakeStations())
+    selectInput('lakeSelection','Select Lake to Assess', 
+                choices= unique(lakeStations()$SIGLAKENAME), multiple = FALSE)
+    
+  })
   
-  
-  
-  #output$lake_filterUI <- uiOutput({
-  #  req(lakeStations())
-  #  selectInput('lakeSelection','Select Lake to Assess', 
-  #              choices= unique(lakeStations()$SIGLAKENAME), multiple = FALSE)
-  #  
-  #})
-  
-  #lake_filter <- reactive({
-  #  req(input$lakeSelection)
-  #  filter(lakeStations(), SIGLAKENAME %in% input$lakeSelection)
-  #})
+  lake_filter <- reactive({
+    req(input$lakeSelection)
+    filter(lakeStations(), SIGLAKENAME %in% input$lakeSelection)
+  })
 
   
   # Station Map
@@ -80,8 +75,9 @@ shinyServer(function(input, output, session) {
   
   
   
-  #### Assessment Unit Review Tab
   
+  #### Assessment Unit Review Tab
+
   # Show selected AU
   output$selectedLake <- DT::renderDataTable({
     datatable(lake_filter() %>% dplyr::select(VAHU6, SIGLAKENAME, ID305B, SEC187 ) %>% distinct(ID305B, .keep_all = T),
@@ -90,10 +86,9 @@ shinyServer(function(input, output, session) {
   # Pull Conventionals data for selected Lake on click
   conventionals_Lake <- eventReactive( input$pullLakeData, {
     z <- filter(conventionals, FDT_STA_ID %in% unique(lake_filter()$FDT_STA_ID)) %>%
-      left_join(dplyr::select(lakeStations(), FDT_STA_ID, SEC, CLASS, SPSTDS,PWS, ID305B_1, ID305B_2, ID305B_3,
+      left_join(dplyr::select(lakeStations, FDT_STA_ID, SEC, CLASS, SPSTDS,PWS, ID305B_1, ID305B_2, ID305B_3,
                               STATION_TYPE_1, STATION_TYPE_2, STATION_TYPE_3, ID305B, SEC187, SIG_LAKE, USE, SIGLAKENAME, 
-                              Chlorophyll_A_limit, TPhosphorus_limit, Assess_TYPE ), by='FDT_STA_ID') })
-  
+                              Chlorophyll_A_limit, TPhosphorus_limit, Assess_TYPE ), by='FDT_STA_ID')  })
   
   output$AUSelection_ <- renderUI({ 
     req(conventionals_Lake())
@@ -114,7 +109,6 @@ shinyServer(function(input, output, session) {
     fluidRow(selectInput('stationSelection', 'Station Selection', choices = unique(z$FDT_STA_ID)),
              helpText("The stations available in the drop down are limited to stations with an ID305B_1 designation equal 
                       to the selected AU. All AU's associated with the selected station can be viewed in the map below."))})
-  
   
   
   AUData <- eventReactive( input$AUSelection, {
@@ -148,7 +142,7 @@ shinyServer(function(input, output, session) {
   allLakeLZdata <- reactive({
     req(stationDataDailySample())
     sigLake <- as.character(AUData()$SIGLAKENAME)
-    allLakeLZstations <- as.character(filter(lakeStations(),SIGLAKENAME %in% sigLake)$STATION_ID)
+    allLakeLZstations <- as.character(filter(lakeStations,SIGLAKENAME %in% sigLake)$STATION_ID)
     allLakeLZData <- filter(conventionals,FDT_STA_ID %in% allLakeLZstations)
     allLakeLZData$FDT_DATE_TIME <- as.POSIXct(allLakeLZData$FDT_DATE_TIME, format="%m/%d/%Y %H:%M")
     allLakeLZData<- mutate(allLakeLZData, SampleDate=format(FDT_DATE_TIME,"%m/%d/%y"))%>% # Separate sampling events by day
@@ -157,7 +151,7 @@ shinyServer(function(input, output, session) {
     thermo$ThermoclineDepth <- as.numeric(thermo$ThermoclineDepth)
     allLakeLZData2 <- plyr::join(allLakeLZData,thermo,by=c('FDT_STA_ID','SampleDate'))%>%
       mutate(LakeStratification= ifelse(FDT_DEPTH < ThermoclineDepth,"Epilimnion","Hypolimnion"))%>%
-      plyr::join(dplyr::select(lakeStations(), Chlorophyll_A_limit, TPhosphorus_limit, Assess_TYPE, FDT_STA_ID), by='FDT_STA_ID')
+      plyr::join(dplyr::select(lakeStations, Chlorophyll_A_limit, TPhosphorus_limit, Assess_TYPE, FDT_STA_ID), by='FDT_STA_ID')
     return(allLakeLZData2)
   })
   
@@ -187,7 +181,7 @@ shinyServer(function(input, output, session) {
   
   output$stationHistoricalInfo <- DT::renderDataTable({ 
     req(stationData())
-    z <- filter(lakeStations(), FDT_STA_ID == input$stationSelection) %>% 
+    z <- filter(lakeStations, FDT_STA_ID == input$stationSelection) %>% 
       dplyr::select(STATION_ID:COMMENTS) %>%
       t() %>% as.data.frame() %>% rename(`Station Information From Last Cycle` = 1)
     DT::datatable(z, options= list(pageLength = nrow(z), scrollY = "250px", dom='t'))  })
@@ -199,16 +193,7 @@ shinyServer(function(input, output, session) {
     
     x <- filter(stationDataDailySample(), FDT_STA_ID %in% input$stationSelection)
     
-    #chlA_Exceedances(x, lakeStations())
-    chlA_Exceedances <- exceedance_chlA(x, lakeStations())
-    
-    if( class(chlA_Exceedances) == 'character' && unique(chlA_Exceedances) == "No Chlorophyll a data for station "){
-      chlA_Exceedances_result <- data.frame(NUT_CHLA_VIO = NA,	NUT_CHLA_SAMP = NA, NUT_CHLA_STAT = NA)
-    } else {
-      chlA_Exceedances_result <- data.frame(NUT_CHLA_VIO = nrow(filter(chlA_Exceedances, chlA_Exceedance== TRUE)),	NUT_CHLA_SAMP = nrow(chlA_Exceedances),
-                                            NUT_CHLA_STAT = ifelse(any(chlA_Exceedances$chlA_Exceedance)==TRUE,'Review','S'))
-    }
-    
+
     cbind(StationTableStartingData(x), tempExceedances(x),DOExceedances_Min(x),pHExceedances(x),
           bacteriaExceedances_OLD(bacteria_Assessment_OLD(x, 'E.COLI', 126, 235),'E.COLI') %>% 
             dplyr::rename('ECOLI_VIO_OLD' = 'E.COLI_VIO', 'ECOLI_SAMP_OLD'='E.COLI_SAMP', 'ECOLI_STAT_OLD'='E.COLI_STAT'),
@@ -222,8 +207,7 @@ shinyServer(function(input, output, session) {
                      FISH_MET_STAT='Not Analyzed by App', FISH_TOX_VIO='Not Analyzed by App', FISH_TOX_STAT='Not Analyzed by App',
                      BENTHIC_STAT='Not Analyzed by App'),
           TP_Exceedances(x), 
-          chlA_Exceedances_result,
-          #chlA_Exceedances(x, lakeStations()),
+          chlA_Exceedances(x),
           data.frame(COMMENTS='Not Analyzed by App') )%>%
       dplyr::select(-ends_with('exceedanceRate'))
   })
@@ -235,16 +219,18 @@ shinyServer(function(input, output, session) {
                                 dom='Bt', buttons=list('copy',
                                                        list(extend='csv',filename=paste('AssessmentResults_',paste(assessmentCycle,input$stationSelection, collapse = "_"),Sys.Date(),sep='')),
                                                        list(extend='excel',filename=paste('AssessmentResults_',paste(assessmentCycle,input$stationSelection, collapse = "_"),Sys.Date(),sep=''))))) %>% 
-      formatStyle(c('TEMP_SAMP','TEMP_VIO','TEMP_STAT'), 'TEMP_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
-      formatStyle(c('DO_SAMP','DO_VIO','DO_STAT'), 'DO_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
-      formatStyle(c('PH_SAMP','PH_VIO','PH_STAT'), 'PH_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
-      formatStyle(c('ECOLI_SAMP_OLD','ECOLI_VIO_OLD','ECOLI_STAT_OLD'), 'ECOLI_STAT_OLD', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
-      formatStyle(c('ECOLI_STV_VIO','ECOLI_GEOMEAN_VIO','ECOLI_STAT_NEW'), 'ECOLI_STAT_NEW', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
-      formatStyle(c('NUT_TP_VIO','NUT_TP_SAMP','NUT_TP_STAT'), 'NUT_TP_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
-      formatStyle(c('NUT_CHLA_VIO','NUT_CHLA_SAMP','NUT_CHLA_STAT'), 'NUT_CHLA_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red')))
-    
-    
+        formatStyle(c('TEMP_SAMP','TEMP_VIO','TEMP_STAT'), 'TEMP_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('DO_SAMP','DO_VIO','DO_STAT'), 'DO_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('PH_SAMP','PH_VIO','PH_STAT'), 'PH_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('ECOLI_SAMP_OLD','ECOLI_VIO_OLD','ECOLI_STAT_OLD'), 'ECOLI_STAT_OLD', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('ECOLI_STV_VIO','ECOLI_GEOMEAN_VIO','ECOLI_STAT_NEW'), 'ECOLI_STAT_NEW', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('NUT_TP_VIO','NUT_TP_SAMP','NUT_TP_STAT'), 'NUT_TP_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red'))) %>%
+        formatStyle(c('NUT_CHLA_VIO','NUT_CHLA_SAMP','NUT_CHLA_STAT'), 'NUT_CHLA_STAT', backgroundColor = styleEqual(c('Review', '10.5% Exceedance'), c('yellow','red')))
+        
+      
   })
+      
+                                                 
   
   ## End station table section
   
@@ -283,7 +269,7 @@ shinyServer(function(input, output, session) {
   ## Temperature Sub Tab ##------------------------------------------------------------------------------------------------------
   
   callModule(temperaturePlotlySingleStation,'temperature', stationDataDailySample, stationSelected)
-  
+
   
   ## DO Sub Tab ##------------------------------------------------------------------------------------------------------
   
@@ -295,8 +281,7 @@ shinyServer(function(input, output, session) {
   
   ## Chlorophyll a Sub Tab ##------------------------------------------------------------------------------------------------------
   
-  callModule(chlAPlotlySingleStation,'chlA', stationDataDailySample, stationSelected, allLakeLZdata, lakeStations)
-  #callModule(chlAPlotlySingleStation,'chlA', stationDataDailySample, stationSelected, allLakeLZdata)
+  callModule(chlAPlotlySingleStation,'chlA', stationDataDailySample, stationSelected, allLakeLZdata)
   
   ## Total Phosphorus Sub Tab ##------------------------------------------------------------------------------------------------------
   
@@ -307,6 +292,6 @@ shinyServer(function(input, output, session) {
   callModule(EcoliPlotlySingleStation,'Ecoli', stationDataDailySample, stationSelected)
   
   
-  
 })
-
+  
+  

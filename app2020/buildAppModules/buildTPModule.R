@@ -1,5 +1,5 @@
 
-lake_filter <- filter(lakeStations, SIGLAKENAME == 'Lake Moomaw')#'Talbott Reservoir')#'Claytor Lake')
+lake_filter <- filter(lakeStations, SIGLAKENAME == 'Banister Lake')# 'Lake Moomaw')#'Talbott Reservoir')#'Claytor Lake')
 
 
 conventionals_Lake <- filter(conventionals, FDT_STA_ID %in% unique(lake_filter$FDT_STA_ID)) %>%
@@ -16,6 +16,9 @@ AUData <- filter(conventionals_Lake, ID305B_1 %in% "VAW-I03L_JKS01A02" |#"VAW-I0
 AUData <- filter(conventionals_Lake, ID305B_1 %in% "VAW-L42L_DAN01A02" | #"VAW-N16L_NEW01A02" "VAW-N16L_NEW01B14" "VAW-N17L_PKC01A10" "VAW-N17L_PKC02A10"
                    ID305B_2 %in% "VAW-L42L_DAN01A02" | 
                    ID305B_2 %in% "VAW-L42L_DAN01A02") %>% 
+  left_join(WQSvalues, by = 'CLASS') 
+
+AUData <- conventionals_Lake %>% 
   left_join(WQSvalues, by = 'CLASS') 
 
 stationData <- filter(stationDataDailySample, FDT_STA_ID %in% "2-JKS046.40")#"4ADAN194.10") #"9-NEW087.14" "9-NEW089.34"
@@ -188,10 +191,13 @@ server <- function(input,output,session){
   stationSelected <- reactive({input$stationSelection})
   
   
-  AUData <- reactive({filter(conventionals_Lake, ID305B_1 %in% "VAW-I03L_JKS01A02" |#"VAW-I03L_JKS02A02" "VAW-I03L_JKS03A02"
-                               ID305B_2 %in% "VAW-I03L_JKS01A02"  | 
-                               ID305B_2 %in% "VAW-I03L_JKS01A02" ) %>% 
-      left_join(WQSvalues, by = 'CLASS')  })
+  AUData <- reactive({conventionals_Lake %>% 
+      left_join(WQSvalues, by = 'CLASS') })
+  
+  #AUData <- reactive({filter(conventionals_Lake, ID305B_1 %in% "VAW-I03L_JKS01A02" |#"VAW-I03L_JKS02A02" "VAW-I03L_JKS03A02"
+  #                             ID305B_2 %in% "VAW-I03L_JKS01A02"  | 
+  #                             ID305B_2 %in% "VAW-I03L_JKS01A02" ) %>% 
+  #    left_join(WQSvalues, by = 'CLASS')  })
   
   
   #AUData <- reactive({filter(conventionals_Lake, ID305B_1 %in% "VAW-L42L_DAN01A02" | #"VAW-N16L_NEW01A02" "VAW-N16L_NEW01B14" "VAW-N17L_PKC01A10" "VAW-N17L_PKC02A10"

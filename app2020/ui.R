@@ -52,12 +52,9 @@ shinyUI(fluidPage(theme="yeti.css",
                                                    'After completing the requisite analyses from the ',
                                                    span(strong('dataProcessing_Statewide.Rmd')),'once, users can 
                                                    upload their results to the Lacustrine Assessment Tool each time they open
-                                                   the tool for analysis. For this version of the app, Emma has preloaded the 
-                                                   stations table for you. If you need to make any changes to this file, you can find it
-                                                   in app/tool/processedStationData/final2020data/ and if you change the file name you will 
-                                                   need to update the app/tool/startupServer.R lakeStations object.'),
-                                          #fileInput('stationsTable','Choose your Regional Stations Table 2.0.',
-                                          #          accept = c(".csv")),
+                                                   the tool for analysis.'),
+                                          fileInput('stationsTable','Choose your Regional Stations Table 2.0.',
+                                                    accept = c(".csv")),
                                           br(),br(),br()),
                       tabPanel('Lake Selection',
                                sidebarPanel(
@@ -67,7 +64,7 @@ shinyUI(fluidPage(theme="yeti.css",
                                     to the 'Assessment Unit Review' Tab to begin analyzing the lake/reservoir."),
                                  #uiOutput("lake_filterUI")#,
                                  
-                                 dynamicSelectInput('regionSelection', "Select DEQ Region to Assess", multiple = FALSE),
+                                 #dynamicSelectInput('regionSelection', "Select DEQ Region to Assess", multiple = FALSE),
                                  dynamicSelectInput("lakeSelection", "Select Lake to Assess", multiple = FALSE)#,
                                ),
                                mainPanel(
@@ -75,8 +72,7 @@ shinyUI(fluidPage(theme="yeti.css",
                                  h5(strong('Assessment units in selected lake')),
                                  DT::dataTableOutput('AUSummary'), br(),
                                  h5(strong('Stations in selected lake that were sampled in current window')),
-                                 DT::dataTableOutput('stationSummary'),
-                                 verbatimTextOutput('verbatim'))
+                                 DT::dataTableOutput('stationSummary'))
                       ),
                       tabPanel('Assessment Unit Review',
                                fluidRow(column(9, DT::dataTableOutput('selectedLake')),
@@ -84,6 +80,7 @@ shinyUI(fluidPage(theme="yeti.css",
                                                #helpText('If the button above is disabled, there are no AUs in the selected lakes.')
                                                )),
                                hr(),
+                               verbatimTextOutput('verbatim'),
                                uiOutput('AUSelection_'),
                                h5(strong('AU information from last cycle')),
                                DT::dataTableOutput('selectedAU'),br(),

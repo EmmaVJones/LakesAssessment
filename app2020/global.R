@@ -361,7 +361,7 @@ chlA_Assessment <- function(x){
 }
 
 
-exceedance_chlA <- function(x){
+exceedance_chlA <- function(x, lakeStations){
   chlA_Assess <- chlA_Assessment(x)
   if(nrow(chlA_Assess) < 1){
     return('No Chlorophyll a data for station ')
@@ -394,9 +394,9 @@ exceedance_chlA <- function(x){
 
 # Station Table summary function
 
-chlA_Exceedances <- function(x){
+chlA_Exceedances <- function(x, lakeStations){
   # get assessment
-  z <- exceedance_chlA(x)
+  z <- exceedance_chlA(x, lakeStations)
   
   if( class(z) == 'character' && unique(z) == "No Chlorophyll a data for station "){
     result <- data.frame(NUT_CHLA_VIO = NA,	NUT_CHLA_SAMP = NA, NUT_CHLA_STAT = NA)
@@ -453,7 +453,7 @@ exceedance_TP <- function(x){
   
   if(nrow(TP_Assess)==0){
     z <- data.frame(FDT_STA_ID = NA, Year = NA, samplePerYear = NA, medianTP = NA, 
-                    TPhosphorus_limit_ug_L = NA, TP_Exceedance = NA, LacustrineZone = NA)
+                    TPhosphorus_limit_ug_L = NA, TP_Exceedance = NA, LacustrineZone = NA)[0,]
   } else {
     if(class(TP_Assess$FDT_STA_ID)=="factor"){ # have to split this step up bc n stationID's affect how split performs
       TP_Assess$FDT_STA_ID <- droplevels(TP_Assess$FDT_STA_ID) # have to drop unused levels from factor or it messes with split function and mixes up data in each list item
@@ -486,7 +486,7 @@ TP_Exceedances <- function(x){
   # get assessment
   z <- exceedance_TP(x)
   
-  if(is.na(unique(z$FDT_STA_ID))){
+  if(nrow(z)==0){#is.na(unique(z$FDT_STA_ID))){
     result <- data.frame(NUT_TP_VIO = NA,	NUT_TP_SAMP = NA, NUT_TP_STAT = NA)
   } else {
     result <- data.frame(NUT_TP_VIO = nrow(filter(z, TP_Exceedance== TRUE)),	NUT_TP_SAMP = nrow(z),

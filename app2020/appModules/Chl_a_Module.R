@@ -1,5 +1,4 @@
 
-
 chlAPlotlySingleStationUI <- function(id){
   ns <- NS(id)
   tagList(
@@ -40,7 +39,7 @@ chlAPlotlySingleStationUI <- function(id){
 }
 
 
-chlAPlotlySingleStation <- function(input,output,session, AUdata, stationSelectedAbove, allLakeLZData){
+chlAPlotlySingleStation <- function(input,output,session, AUdata, stationSelectedAbove, allLakeLZData, lakeStations){
   ns <- session$ns
   
   # Select One station for individual review
@@ -80,14 +79,14 @@ chlAPlotlySingleStation <- function(input,output,session, AUdata, stationSelecte
   # selected station exceedance rate
   output$stationChlaExceedanceRate <- renderTable({
     req(chlA_oneStation())
-    LZ <- exceedance_chlA(chlA_oneStation())
+    LZ <- exceedance_chlA(chlA_oneStation(), lakeStations())
     
     if(class(LZ) == 'character'){
       return("No Chlorophyll a data to assess.")
     }else{
       LZ <- LZ$LacustrineZone[1]
-      assessmentDetermination(exceedance_chlA(chlA_oneStation()),
-                              filter(exceedance_chlA(chlA_oneStation()), chlA_Exceedance ==T),'Chlorophyll a','Aquatic Life')%>%
+      assessmentDetermination(exceedance_chlA(chlA_oneStation(), lakeStations()),
+                              filter(exceedance_chlA(chlA_oneStation(), lakeStations()), chlA_Exceedance ==T),'Chlorophyll a','Aquatic Life')%>%
         mutate(LacustrineZone=LZ) %>%# for chla and TP only, show whether or not in lacustrine zone with single station exceedance
         dplyr::select(nSamples,nExceedance,exceedanceRate, LacustrineZone) # don't give assessment determination for single station}})
     }
@@ -97,28 +96,28 @@ chlAPlotlySingleStation <- function(input,output,session, AUdata, stationSelecte
   # Lake Chl a 90th percentiles
   output$chla90thTable <- renderTable({
     req(allLakeLZData())
-    exceedance_chlA(allLakeLZData())})
+    exceedance_chlA(allLakeLZData(), lakeStations())})
   
   
   # All Lake LACUSTRINE ZONE Chlorophyll a exceedance rate
   output$chla_exceedanceRate <- renderTable({
     req(allLakeLZData())
-    z <- exceedance_chlA(allLakeLZData())
+    z <- exceedance_chlA(allLakeLZData(), lakeStations())
     if(class(z)=='character'){
       return("No Chlorophyll a data to assess.")
     }else{
-      assessmentDetermination(filter(exceedance_chlA(allLakeLZData()), LacustrineZone == TRUE),
-                              filter(exceedance_chlA(allLakeLZData()),chlA_Exceedance ==T & LacustrineZone == TRUE),'Chlorophyll a','Aquatic Life')%>%
+      assessmentDetermination(filter(exceedance_chlA(allLakeLZData(), lakeStations()), LacustrineZone == TRUE),
+                              filter(exceedance_chlA(allLakeLZData(), lakeStations()),chlA_Exceedance ==T & LacustrineZone == TRUE),'Chlorophyll a','Aquatic Life')%>%
         dplyr::select(nSamples, nExceedance, exceedanceRate)}})
   
   
   # All Lake Chlorophyll a exceedance rate REGARDLESS OF WHETHER OR NOT STATIONS ARE IN LACUSTRINE ZONE 
   output$chla_exceedanceRateALL <- renderTable({
     req(allLakeLZData())
-    z <- exceedance_chlA(allLakeLZData())
+    z <- exceedance_chlA(allLakeLZData(), lakeStations())
     if(class(z)=='character'){
       return("No Chlorophyll a data to assess.")
     }else{
-      assessmentDetermination(z,filter(exceedance_chlA(allLakeLZData()),chlA_Exceedance ==T),'Chlorophyll a','Aquatic Life')%>%
+      assessmentDetermination(z,filter(exceedance_chlA(allLakeLZData(), lakeStations()),chlA_Exceedance ==T),'Chlorophyll a','Aquatic Life')%>%
         dplyr::select(nSamples, nExceedance, exceedanceRate)}})
- }
+}
