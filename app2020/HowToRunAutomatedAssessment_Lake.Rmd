@@ -148,7 +148,7 @@ for(i in 1:length(unique(lakeStations$SIGLAKENAME))){
                                               SED_TOX_STAT='Not Analyzed by App', FISH_MET_VIO='Not Analyzed by App',
                                               FISH_MET_STAT='Not Analyzed by App', FISH_TOX_VIO='Not Analyzed by App',
                                               FISH_TOX_STAT='Not Analyzed by App', BENTHIC_STAT='Not Analyzed by App'),
-                                   TP_Exceedances(stationData), chlA_Exceedances(stationData),
+                                   TP_Exceedances(stationData), chlA_Exceedances(stationData, lakeStations),
                                    data.frame(COMMENTS='Not Analyzed by App') ) %>%
         dplyr::select(-ends_with('exceedanceRate'))
       
