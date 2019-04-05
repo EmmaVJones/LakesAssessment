@@ -118,6 +118,10 @@ shinyUI(fluidPage(theme="yeti.css",
                                                      fluidRow(column(1),column(10,tableOutput('uniqueStationDataTableRecords'))),
                                                      h5('Assessment Window:'),
                                                      fluidRow(column(1),column(10,textOutput('stationDataTableAssessmentWindow'))), br(),br()),
+                                            tabPanel('Thermocline',
+                                                     helpText('Review each site using the single site visualization section. The results from this analysis directly affect
+                                                                        the dissolved oxygen, and pH assessment. '),
+                                                     thermoclinePlotlySingleStationUI('thermocline')),
                                             tabPanel('Temperature',
                                                      helpText('Review each site using the single site visualization section. The results from this analysis are reflected
                                                                         in the TEMP_VIO, TEMP_SAMP, and TEMP_STAT columns in the station table.'),

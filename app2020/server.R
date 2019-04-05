@@ -279,6 +279,10 @@ shinyServer(function(input, output, session) {
   stationSelected <- reactive({input$stationSelection})
   
   
+  ## Thermocline Sub Tab  ##------------------------------------------------------------------------------------------------------
+  
+  callModule(thermoclinePlotlySingleStation,'thermocline', stationDataDailySample, stationSelected)
+  
   
   ## Temperature Sub Tab ##------------------------------------------------------------------------------------------------------
   

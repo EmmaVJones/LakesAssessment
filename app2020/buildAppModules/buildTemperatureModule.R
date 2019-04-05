@@ -40,15 +40,7 @@ temperaturePlotlySingleStationUI <- function(id){
     wellPanel(
       h4(strong('Single Station Data Visualization')),
       uiOutput(ns('temperature_oneStationSelectionUI')),
-      fluidRow(
-        column(6,
-               h5(strong("Thermocline Analysis")),
-               DT::dataTableOutput(ns('thermoclineResults'))),
-        column(6,
-               fluidRow(
-                 column(6,uiOutput(ns('stationDateSelection'))),
-                 column(6,uiOutput(ns('stationTempStandardPlotly')))),
-               plotlyOutput(ns('thermoclinePlotly')))),
+      plotlyOutput(ns('temperatureplotly')),
       br(),hr(),br(),
       fluidRow(
         column(8, h5('All temperature records that are above the criteria for the ',span(strong('selected site')),' are highlighted below.'),
@@ -84,96 +76,31 @@ temperaturePlotlySingleStation <- function(input,output,session, AUdata, station
     req(ns(input$temperature_oneStationSelection))
     filter(AUdata(),FDT_STA_ID %in% input$temperature_oneStationSelection)})
   
-  
-  # Thermocline Analysis Table
-  output$thermoclineResults <- DT::renderDataTable({
-    req(temperature_oneStation())
-    dat <- dplyr::select(temperature_oneStation(),SampleDate,ThermoclineDepth)%>%
-      distinct(SampleDate,.keep_all = TRUE)
-    dat[is.nan(dat$ThermoclineDepth),2] <- 'No Thermocline'
+  output$temperatureplotly <- renderPlotly({
+    req(input$temperature_oneStationSelection, temperature_oneStation())
     
+    dat <- mutate(temperature_oneStation(), LakeStratification = replace_na(LakeStratification,"NONE"))
     
-    datatable(dat, extensions = 'Buttons', escape=F, rownames = F,
-              options=list(dom='Bt',
-                           buttons=list('copy'),
-                           pageLength=length(unique(dat$SampleDate)),
-                           scrollY = "300px"))%>%
-      formatStyle("ThermoclineDepth",backgroundColor=styleEqual('No Thermocline',"red"))
-  })
-  
-  
-  # Thermocline date option dropdown
-  output$stationDateSelection <- renderUI({
-    req(temperature_oneStation())
-    selectInput(ns('thermoDateSelection'),strong("Choose a Sample Date to Plot"),choices = unique(temperature_oneStation()$SampleDate))
-  })
-  
-  output$stationTempStandardPlotly <- renderUI({
-    checkboxInput(ns('tempStd'),strong("Plot Temperature Standard (C)"))
-  })
-  
-  # Thermoncline plotly based on user date input
-  output$thermoclinePlotly <- renderPlotly({
-    req(temperature_oneStation(),input$thermoDateSelection)
-    dat <- dplyr::filter(temperature_oneStation(),SampleDate %in% input$thermoDateSelection)
+    dat$SampleDate <- as.POSIXct(dat$SampleDate, format="%m/%d/%y")
+    dat$LakeStratification <- as.factor(dat$LakeStratification)
+    dat$LakeStratification <- factor(dat$LakeStratification,levels=c("Epilimnion","NONE","Hypolimnion"))#,ordered=T)
     
-    if(dat$ThermoclineDepth[1] != 'NaN'){
-      if(input$tempStd == TRUE){
-        suppressWarnings(
-          plot_ly(data=dat)%>%
-            add_lines(x=~FDT_TEMP_CELCIUS,y=~ThermoclineDepth, mode='line',line = list(color = '#E50606'),
-                      hoverinfo = "Thermocline", text= paste("Thermocline Depth:",unique(dat$ThermoclineDepth),sep=''), name = 'Thermocline')%>%
-            add_lines(x=~`Max Temperature (C)`,y=~FDT_DEPTH, mode='line',line = list(color = 'black'),
-                      hoverinfo = "TemperatureSTD", text= paste("Temperature Standard (C):",unique(dat$`Max Temperature (C)`),sep=''), name = 'Temperature Standard')%>%
-            add_markers(x= ~FDT_TEMP_CELCIUS, y= ~FDT_DEPTH,mode = 'scatter', name="Temperature",
-                        color=~LakeStratification, colors=c('#BF382A', '#0C4B8E'),
-                        hoverinfo="text",text=~paste(sep="<br>",paste("Depth: ",FDT_DEPTH, "m"),
-                                                     paste("Temperature:",FDT_TEMP_CELCIUS,"C"),
-                                                     paste("LakeStratification: ",LakeStratification)))%>%
-            layout(xaxis = list(autorange = "reversed",title="Temperature (Celcius)"),
-                   yaxis = list(autorange = "reversed",title="Depth (m)"),
-                   showlegend=FALSE
-            ))
-      } else {
-        suppressWarnings(
-          plot_ly(data=dat)%>%
-            add_lines(x=~FDT_TEMP_CELCIUS,y=~ThermoclineDepth, mode='line',line = list(color = '#E50606'),
-                      hoverinfo = "Thermocline", text= paste("Thermocline Depth:",unique(dat$ThermoclineDepth),sep=''), name = 'Thermocline')%>%
-            add_markers(x= ~FDT_TEMP_CELCIUS, y= ~FDT_DEPTH,mode = 'scatter', name="Temperature",
-                        color=~LakeStratification, colors=c('#BF382A', '#0C4B8E'),
-                        hoverinfo="text",text=~paste(sep="<br>",paste("Depth: ",FDT_DEPTH, "m"),
-                                                     paste("Temperature:",FDT_TEMP_CELCIUS,"C"),
-                                                     paste("LakeStratification: ",LakeStratification)))%>%
-            layout(xaxis = list(autorange = "reversed",title="Temperature (Celcius)"),
-                   yaxis = list(autorange = "reversed",title="Depth (m)"),
-                   showlegend=FALSE
-            ))
-      }
-      
-    }else{
-      if(input$tempStd == TRUE){
-        suppressWarnings(
-          plot_ly(data=dat,y=~FDT_DEPTH,x=~FDT_TEMP_CELCIUS,type='scatter',mode='markers',
-                  hoverinfo="text",text=~paste(sep="<br>",paste("Depth: ",FDT_DEPTH, "m"),
-                                               paste("Temperature:",FDT_TEMP_CELCIUS,"C")))%>%
-            add_lines(x=~`Max Temperature (C)`,y=~FDT_DEPTH, mode='line',line = list(color = 'black'),
-                      hoverinfo = "TemperatureSTD", text= paste("Temperature Standard (C):",unique(dat$`Max Temperature (C)`),sep=''), name = 'Temperature Standard')%>%
-            layout(xaxis = list(autorange = "reversed",title="Temperature (Celcius)"),
-                   yaxis = list(autorange = "reversed",title="Depth (m)"),
-                   showlegend=FALSE))
-      } else {
-        suppressWarnings(
-          plot_ly(data=dat,y=~FDT_DEPTH,x=~FDT_TEMP_CELCIUS,type='scatter',mode='markers',
-                  hoverinfo="text",text=~paste(sep="<br>",paste("Depth: ",FDT_DEPTH, "m"),
-                                               paste("Temperature:",FDT_TEMP_CELCIUS,"C")))%>%
-            layout(xaxis = list(autorange = "reversed",title="Temperature (Celcius)"),
-                   yaxis = list(autorange = "reversed",title="Depth (m)"),
-                   showlegend=FALSE))}
-        }
-      
-      
+    suppressWarnings(
+      plot_ly(data=dat)%>%
+        add_markers(x=~SampleDate,y=~FDT_TEMP_CELCIUS, mode = 'scatter', name="Temperature",
+                    color=~LakeStratification,# colors=c('#BF382A', '#0C4B8E'),
+                    hoverinfo="text",text=~paste(sep="<br>",paste("Depth: ",FDT_DEPTH, "m"),
+                                                 paste("Temperature:",FDT_TEMP_CELCIUS,"C"),
+                                                 paste("LakeStratification: ",LakeStratification))) %>%
+        add_lines(x=~SampleDate, y=~`Max Temperature (C)`, mode='line',line = list(color = 'black'),
+                  hoverinfo = "TemperatureSTD", text= paste("Temperature Standard (C):",unique(dat$`Max Temperature (C)`),sep=''), name = 'Temperature Standard')%>%
+        
+        layout(showlegend=FALSE,
+               yaxis=list(title="Temperature (Celsius)"),
+               xaxis=list(title="Sample Date",tickfont = list(size = 10))
+        ))
   })
-  
+
   
   # Station temperature exceedances
   output$TempRangeTableSingleSite <- renderTable({
